@@ -12,6 +12,7 @@ from datetime import datetime, timedelta
 from typing import Optional
 import iyzipay
 import json
+import traceback
 
 load_dotenv()
 
@@ -140,7 +141,10 @@ async def create_payment(
     authorization: Optional[str] = Header(None)
 ):
     try:
+        print(f"🔵 Payment request received for plan: {payment.plan}")
+        
         user = get_current_user_from_token(authorization)
+        print(f"🔵 User authenticated: {user['email']}")
         
         # Plan fiyatları
         plan_prices = {
@@ -153,15 +157,18 @@ async def create_payment(
         
         plan_info = plan_prices[payment.plan]
         
+        print(f"🔵 Creating payment request for {plan_info['name']}")
+        print(f"🔵 Iyzico options: API Key={iyzico_options.get('api_key')[:20]}..., Base URL={iyzico_options.get('base_url')}")
+        
         # İyzico ödeme isteği
         payment_request = {
             'locale': 'en',
-            'conversationId': f"{user['email']}_{payment.plan}_{datetime.utcnow().timestamp()}",
+            'conversationId': f"{user['email']}_{payment.plan}_{int(datetime.utcnow().timestamp())}",
             'price': plan_info['price'],
             'paidPrice': plan_info['price'],
             'currency': 'USD',
             'installment': '1',
-            'basketId': f"basket_{user['email']}",
+            'basketId': f"basket_{int(datetime.utcnow().timestamp())}",
             'paymentChannel': 'WEB',
             'paymentGroup': 'SUBSCRIPTION',
             'paymentCard': {
@@ -173,27 +180,27 @@ async def create_payment(
                 'registerCard': '0'
             },
             'buyer': {
-                'id': user['email'],
+                'id': user['email'][:11],
                 'name': user['name'].split()[0] if ' ' in user['name'] else user['name'],
                 'surname': user['name'].split()[-1] if ' ' in user['name'] else 'User',
                 'email': user['email'],
                 'identityNumber': '11111111111',
-                'registrationAddress': 'Address',
-                'city': 'City',
+                'registrationAddress': 'Nidakule Göztepe, Merdivenköy Mah. Bora Sok. No:1',
+                'city': 'Istanbul',
                 'country': 'Turkey',
                 'ip': '85.34.78.112'
             },
             'shippingAddress': {
                 'contactName': user['name'],
-                'city': 'City',
+                'city': 'Istanbul',
                 'country': 'Turkey',
-                'address': 'Address'
+                'address': 'Nidakule Göztepe, Merdivenköy Mah. Bora Sok. No:1'
             },
             'billingAddress': {
                 'contactName': user['name'],
-                'city': 'City',
+                'city': 'Istanbul',
                 'country': 'Turkey',
-                'address': 'Address'
+                'address': 'Nidakule Göztepe, Merdivenköy Mah. Bora Sok. No:1'
             },
             'basketItems': [
                 {
@@ -206,15 +213,23 @@ async def create_payment(
             ]
         }
         
+        print(f"🔵 Calling iyzico API...")
+        
         # İyzico API çağrısı
         payment_result = iyzipay.Payment().create(payment_request, iyzico_options)
         
+        print(f"🔵 Iyzico response received")
+        
         result = json.loads(payment_result.read().decode('utf-8'))
+        
+        print(f"🔵 Parsed result: status={result.get('status')}, errorMessage={result.get('errorMessage')}")
         
         # Ödeme başarılı ise kullanıcı planını güncelle
         if result.get('status') == 'success':
             users_db[user['email']]['plan'] = payment.plan
             users_db[user['email']]['analyses_used'] = 0
+            
+            print(f"✅ Payment successful! User plan updated to {payment.plan}")
             
             return {
                 "success": True,
@@ -222,13 +237,19 @@ async def create_payment(
                 "plan": payment.plan
             }
         else:
+            error_msg = result.get('errorMessage', 'Payment failed')
+            error_code = result.get('errorCode', 'UNKNOWN')
+            print(f"❌ Payment failed: {error_msg} (Code: {error_code})")
+            
             return {
                 "success": False,
-                "message": result.get('errorMessage', 'Payment failed'),
-                "error": result.get('errorCode')
+                "message": error_msg,
+                "error": error_code
             }
             
     except Exception as e:
+        print(f"❌ PAYMENT ERROR: {str(e)}")
+        print(f"❌ Full traceback: {traceback.format_exc()}")
         raise HTTPException(status_code=500, detail=f"Payment error: {str(e)}")
 
 @app.post("/analyze-image", response_model=AnalysisResponse)
