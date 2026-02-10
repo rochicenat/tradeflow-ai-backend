@@ -10,13 +10,8 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
-
-# Önce requirements'ı kur
 RUN pip install --no-cache-dir -r requirements.txt
-
-# Pillow'u binary olarak kur (build etmeden)
 RUN pip install --no-cache-dir --only-binary :all: Pillow
-
 COPY . .
 
 EXPOSE 8000
