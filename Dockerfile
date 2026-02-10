@@ -10,10 +10,14 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
+
+# Requirements'ı kur
 RUN pip install --no-cache-dir -r requirements.txt
+
+# Pillow'u binary olarak kur
 RUN pip install --no-cache-dir --only-binary :all: Pillow
+
 COPY . .
 
-EXPOSE 8000
-
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Railway $PORT'u kullan (default 8000)
+CMD uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000}
