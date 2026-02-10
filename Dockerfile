@@ -2,20 +2,20 @@ FROM python:3.13-slim
 
 WORKDIR /app
 
-# Pillow için gerekli build dependencies
+# Pillow için gerekli runtime dependencies
 RUN apt-get update && apt-get install -y \
-    gcc \
-    g++ \
-    make \
-    libjpeg-dev \
-    zlib1g-dev \
-    libpng-dev \
-    libtiff-dev \
-    libwebp-dev \
+    libjpeg62-turbo \
+    zlib1g \
+    libpng16-16 \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
+
+# Önce requirements'ı kur
 RUN pip install --no-cache-dir -r requirements.txt
+
+# Pillow'u binary olarak kur (build etmeden)
+RUN pip install --no-cache-dir --only-binary :all: Pillow
 
 COPY . .
 
