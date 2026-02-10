@@ -2,10 +2,9 @@ fastapi==0.109.0
 uvicorn[standard]==0.27.0
 python-multipart==0.0.6
 python-dotenv==1.0.0
-Pillow==11.0.0
+Pillow-SIMD==9.0.0.post1
 google-generativeai==0.3.2
 passlib[bcrypt]==1.7.4
 python-jose[cryptography]==3.3.0
 bcrypt==4.1.2
-iyzipay==1.0.50
 iyzipay==1.0.50
