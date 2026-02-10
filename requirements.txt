@@ -6,4 +6,4 @@ google-generativeai==0.3.2
 passlib[bcrypt]==1.7.4
 python-jose[cryptography]==3.3.0
 bcrypt==4.1.2
-iyzipay==1.0.50
+iyzipay==1.0.45
