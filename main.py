@@ -40,7 +40,6 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 30
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 # İyzico Configuration
-iyzico_options = {
     'api_key': os.getenv('IYZICO_API_KEY'),
     'secret_key': os.getenv('IYZICO_SECRET_KEY'),
     'base_url': os.getenv('IYZICO_BASE_URL', 'https://sandbox-api.iyzipay.com')
@@ -158,7 +157,6 @@ async def create_payment(
         plan_info = plan_prices[payment.plan]
         
         print(f"🔵 Creating payment request for {plan_info['name']}")
-        print(f"🔵 Iyzico options: API Key={iyzico_options.get('api_key')[:20]}..., Base URL={iyzico_options.get('base_url')}")
         
         # İyzico ödeme isteği
         payment_request = {
@@ -213,10 +211,8 @@ async def create_payment(
             ]
         }
         
-        print(f"🔵 Calling iyzico API...")
         
         # İyzico API çağrısı
-        payment_result = iyzipay.Payment().create(payment_request, iyzico_options)
         
         print(f"🔵 Iyzico response received")
         
