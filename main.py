@@ -10,7 +10,7 @@ from passlib.context import CryptContext
 from jose import JWTError, jwt
 from datetime import datetime, timedelta
 from typing import Optional
-import iyzipay
+# import iyzipay
 import json
 import traceback
 
@@ -40,10 +40,11 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 30
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 # İyzico Configuration
-    'api_key': os.getenv('IYZICO_API_KEY'),
-    'secret_key': os.getenv('IYZICO_SECRET_KEY'),
-    'base_url': os.getenv('IYZICO_BASE_URL', 'https://sandbox-api.iyzipay.com')
-}
+# iyzico_options = {
+#     'api_key': os.getenv('IYZICO_API_KEY'),
+#     'secret_key': os.getenv('IYZICO_SECRET_KEY'),
+#     'base_url': os.getenv('IYZICO_BASE_URL', 'https://sandbox-api.iyzipay.com')
+# }
 
 users_db = {}
 
@@ -134,209 +135,214 @@ async def get_current_user(authorization: Optional[str] = Header(None)):
     result.pop("hashed_password", None)
     return result
 
-@app.post("/create-payment")
-async def create_payment(
-    payment: PaymentRequest,
-    authorization: Optional[str] = Header(None)
-):
-    try:
-        print(f"🔵 Payment request received for plan: {payment.plan}")
-        
-        user = get_current_user_from_token(authorization)
-        print(f"🔵 User authenticated: {user['email']}")
-        
-        # Plan fiyatları
-        plan_prices = {
-            "pro": {"price": "9.99", "name": "Pro Plan"},
-            "premium": {"price": "19.99", "name": "Premium Plan"}
-        }
-        
-        if payment.plan not in plan_prices:
-            raise HTTPException(status_code=400, detail="Invalid plan")
-        
-        plan_info = plan_prices[payment.plan]
-        
-        print(f"🔵 Creating payment request for {plan_info['name']}")
-        
-        # İyzico ödeme isteği
-        payment_request = {
-            'locale': 'en',
-            'conversationId': f"{user['email']}_{payment.plan}_{int(datetime.utcnow().timestamp())}",
-            'price': plan_info['price'],
-            'paidPrice': plan_info['price'],
-            'currency': 'USD',
-            'installment': '1',
-            'basketId': f"basket_{int(datetime.utcnow().timestamp())}",
-            'paymentChannel': 'WEB',
-            'paymentGroup': 'SUBSCRIPTION',
-            'paymentCard': {
-                'cardHolderName': payment.card_holder_name,
-                'cardNumber': payment.card_number,
-                'expireMonth': payment.expire_month,
-                'expireYear': payment.expire_year,
-                'cvc': payment.cvc,
-                'registerCard': '0'
-            },
-            'buyer': {
-                'id': user['email'][:11],
-                'name': user['name'].split()[0] if ' ' in user['name'] else user['name'],
-                'surname': user['name'].split()[-1] if ' ' in user['name'] else 'User',
-                'email': user['email'],
-                'identityNumber': '11111111111',
-                'registrationAddress': 'Nidakule Göztepe, Merdivenköy Mah. Bora Sok. No:1',
-                'city': 'Istanbul',
-                'country': 'Turkey',
-                'ip': '85.34.78.112'
-            },
-            'shippingAddress': {
-                'contactName': user['name'],
-                'city': 'Istanbul',
-                'country': 'Turkey',
-                'address': 'Nidakule Göztepe, Merdivenköy Mah. Bora Sok. No:1'
-            },
-            'billingAddress': {
-                'contactName': user['name'],
-                'city': 'Istanbul',
-                'country': 'Turkey',
-                'address': 'Nidakule Göztepe, Merdivenköy Mah. Bora Sok. No:1'
-            },
-            'basketItems': [
-                {
-                    'id': payment.plan,
-                    'name': plan_info['name'],
-                    'category1': 'Subscription',
-                    'itemType': 'VIRTUAL',
-                    'price': plan_info['price']
-                }
-            ]
-        }
-        
-        
-        # İyzico API çağrısı
-        
-        print(f"🔵 Iyzico response received")
-        
-        result = json.loads(payment_result.read().decode('utf-8'))
-        
-        print(f"🔵 Parsed result: status={result.get('status')}, errorMessage={result.get('errorMessage')}")
-        
-        # Ödeme başarılı ise kullanıcı planını güncelle
-        if result.get('status') == 'success':
-            users_db[user['email']]['plan'] = payment.plan
-            users_db[user['email']]['analyses_used'] = 0
-            
-            print(f"✅ Payment successful! User plan updated to {payment.plan}")
-            
-            return {
-                "success": True,
-                "message": "Payment successful",
-                "plan": payment.plan
-            }
-        else:
-            error_msg = result.get('errorMessage', 'Payment failed')
-            error_code = result.get('errorCode', 'UNKNOWN')
-            print(f"❌ Payment failed: {error_msg} (Code: {error_code})")
-            
-            return {
-                "success": False,
-                "message": error_msg,
-                "error": error_code
-            }
-            
-    except Exception as e:
-        print(f"❌ PAYMENT ERROR: {str(e)}")
-        print(f"❌ Full traceback: {traceback.format_exc()}")
-        raise HTTPException(status_code=500, detail=f"Payment error: {str(e)}")
+# @app.post("/create-payment")
+# async def create_payment(
+#     payment: PaymentRequest,
+#     authorization: Optional[str] = Header(None)
+# ):
+#     try:
+#         print(f"🔵 Payment request received for plan: {payment.plan}")
+#         
+#         user = get_current_user_from_token(authorization)
+#         print(f"🔵 User authenticated: {user['email']}")
+#         
+#         # Plan fiyatları
+#         plan_prices = {
+#             "pro": {"price": "9.99", "name": "Pro Plan"},
+#             "premium": {"price": "19.99", "name": "Premium Plan"}
+#         }
+#         
+#         if payment.plan not in plan_prices:
+#             raise HTTPException(status_code=400, detail="Invalid plan")
+#         
+#         plan_info = plan_prices[payment.plan]
+#         
+#         print(f"🔵 Creating payment request for {plan_info['name']}")
+#         print(f"🔵 Iyzico options: API Key={iyzico_options.get('api_key')[:20]}..., Base URL={iyzico_options.get('base_url')}")
+#         
+#         # İyzico ödeme isteği
+#         payment_request = {
+#             'locale': 'en',
+#             'conversationId': f"{user['email']}_{payment.plan}_{int(datetime.utcnow().timestamp())}",
+#             'price': plan_info['price'],
+#             'paidPrice': plan_info['price'],
+#             'currency': 'USD',
+#             'installment': '1',
+#             'basketId': f"basket_{int(datetime.utcnow().timestamp())}",
+#             'paymentChannel': 'WEB',
+#             'paymentGroup': 'SUBSCRIPTION',
+#             'paymentCard': {
+#                 'cardHolderName': payment.card_holder_name,
+#                 'cardNumber': payment.card_number,
+#                 'expireMonth': payment.expire_month,
+#                 'expireYear': payment.expire_year,
+#                 'cvc': payment.cvc,
+#                 'registerCard': '0'
+#             },
+#             'buyer': {
+#                 'id': user['email'][:11],
+#                 'name': user['name'].split()[0] if ' ' in user['name'] else user['name'],
+#                 'surname': user['name'].split()[-1] if ' ' in user['name'] else 'User',
+#                 'email': user['email'],
+#                 'identityNumber': '11111111111',
+#                 'registrationAddress': 'Nidakule Göztepe, Merdivenköy Mah. Bora Sok. No:1',
+#                 'city': 'Istanbul',
+#                 'country': 'Turkey',
+#                 'ip': '85.34.78.112'
+#             },
+#             'shippingAddress': {
+#                 'contactName': user['name'],
+#                 'city': 'Istanbul',
+#                 'country': 'Turkey',
+#                 'address': 'Nidakule Göztepe, Merdivenköy Mah. Bora Sok. No:1'
+#             },
+#             'billingAddress': {
+#                 'contactName': user['name'],
+#                 'city': 'Istanbul',
+#                 'country': 'Turkey',
+#                 'address': 'Nidakule Göztepe, Merdivenköy Mah. Bora Sok. No:1'
+#             },
+#             'basketItems': [
+#                 {
+#                     'id': payment.plan,
+#                     'name': plan_info['name'],
+#                     'category1': 'Subscription',
+#                     'itemType': 'VIRTUAL',
+#                     'price': plan_info['price']
+#                 }
+#             ]
+#         }
+#         
+#         print(f"🔵 Calling iyzico API...")
+#         
+#         # İyzico API çağrısı
+#         payment_result = iyzipay.Payment().create(payment_request, iyzico_options)
+#         
+#         print(f"🔵 Iyzico response received")
+#         
+#         result = json.loads(payment_result.read().decode('utf-8'))
+#         
+#         print(f"🔵 Parsed result: status={result.get('status')}, errorMessage={result.get('errorMessage')}")
+#         
+#         # Ödeme başarılı ise kullanıcı planını güncelle
+#         if result.get('status') == 'success':
+#             users_db[user['email']]['plan'] = payment.plan
+#             users_db[user['email']]['analyses_used'] = 0
+#             
+#             print(f"✅ Payment successful! User plan updated to {payment.plan}")
+#             
+#             return {
+#                 "success": True,
+#                 "message": "Payment successful",
+#                 "plan": payment.plan
+#             }
+#         else:
+#             error_msg = result.get('errorMessage', 'Payment failed')
+#             error_code = result.get('errorCode', 'UNKNOWN')
+#             print(f"❌ Payment failed: {error_msg} (Code: {error_code})")
+#             
+#             return {
+#                 "success": False,
+#                 "message": error_msg,
+#                 "error": error_code
+#             }
+#             
+#     except Exception as e:
+#         print(f"❌ PAYMENT ERROR: {str(e)}")
+#         print(f"❌ Full traceback: {traceback.format_exc()}")
+#         raise HTTPException(status_code=500, detail=f"Payment error: {str(e)}")
+# 
+# @app.post("/analyze-image", response_model=AnalysisResponse)
+# async def analyze_image(
+#     file: UploadFile = File(...),
+#     authorization: Optional[str] = Header(None)
+# ):
+#     try:
+#         user = get_current_user_from_token(authorization)
+#         
+#         # Plan limitleri
+#         plan_limits = {
+#             "free": 3,
+#             "pro": 50,
+#             "premium": 999999
+#         }
+#         
+#         user_plan = user.get('plan', 'free')
+#         analyses_used = user.get('analyses_used', 0)
+#         limit = plan_limits.get(user_plan, 3)
+#         
+#         if analyses_used >= limit:
+#             raise HTTPException(
+#                 status_code=403,
+#                 detail=f"Monthly limit reached. Upgrade to continue."
+#             )
+#         
+#         if not file.content_type.startswith("image/"):
+#             raise HTTPException(status_code=400, detail="File must be an image")
+#         
+#         image_data = await file.read()
+#         image = Image.open(io.BytesIO(image_data))
+#         
+#         prompt = """Analyze this trading chart and provide a detailed technical analysis.
+# 
+# IMPORTANT: Format your response EXACTLY like this (use these exact section headers):
+# 
+# **Support/Resistance Zones:**
+# * Immediate Resistance: [price level and description]
+# * Key Support: [price level and description]
+# * Additional levels if relevant
+# 
+# **Possible Breakout Areas:**
+# * Bullish Breakout: [conditions and price targets]
+# * Bearish Breakdown: [conditions and price targets]
+# 
+# **RSI or Indicator Signals:**
+# * [Indicator name]: [current reading and interpretation]
+# * [Additional indicators if visible]
+# 
+# **Trading Idea:**
+# * Entry: [suggested entry strategy]
+# * Stop Loss: [suggested stop loss level]
+# * Target: [suggested profit target]
+# * Risk Warning: [brief risk assessment]
+# 
+# First line must be ONLY: bullish, bearish, or sideways
+# Second line must be ONLY: low, medium, or high
+# Then provide the detailed analysis using the sections above.
+# """
+#         
+#         response = model.generate_content([prompt, image])
+#         
+#         ai_response = response.text.strip()
+#         lines = ai_response.split('\n')
+#         
+#         trend = lines[0].strip().lower() if len(lines) > 0 else "sideways"
+#         confidence = lines[1].strip().lower() if len(lines) > 1 else "medium"
+#         analysis = '\n'.join(lines[2:]).strip() if len(lines) > 2 else ai_response
+#         
+#         if trend not in ["bullish", "bearish", "sideways"]:
+#             trend = "sideways"
+#         if confidence not in ["low", "medium", "high"]:
+#             confidence = "medium"
+#         
+#         # Kullanım sayısını artır
+#         users_db[user['email']]['analyses_used'] = analyses_used + 1
+#         
+#         return AnalysisResponse(
+#             analysis=analysis,
+#             trend=trend,
+#             confidence=confidence
+#         )
+#         
+#     except HTTPException:
+#         raise
+#     except Exception as e:
+#         raise HTTPException(status_code=500, detail=f"Error analyzing image: {str(e)}")
+# 
+# if __name__ == "__main__":
+#     import uvicorn
+#     uvicorn.run(app, host="0.0.0.0", port=8000)
 
-@app.post("/analyze-image", response_model=AnalysisResponse)
-async def analyze_image(
-    file: UploadFile = File(...),
-    authorization: Optional[str] = Header(None)
-):
-    try:
-        user = get_current_user_from_token(authorization)
-        
-        # Plan limitleri
-        plan_limits = {
-            "free": 3,
-            "pro": 50,
-            "premium": 999999
-        }
-        
-        user_plan = user.get('plan', 'free')
-        analyses_used = user.get('analyses_used', 0)
-        limit = plan_limits.get(user_plan, 3)
-        
-        if analyses_used >= limit:
-            raise HTTPException(
-                status_code=403,
-                detail=f"Monthly limit reached. Upgrade to continue."
-            )
-        
-        if not file.content_type.startswith("image/"):
-            raise HTTPException(status_code=400, detail="File must be an image")
-        
-        image_data = await file.read()
-        image = Image.open(io.BytesIO(image_data))
-        
-        prompt = """Analyze this trading chart and provide a detailed technical analysis.
-
-IMPORTANT: Format your response EXACTLY like this (use these exact section headers):
-
-**Support/Resistance Zones:**
-* Immediate Resistance: [price level and description]
-* Key Support: [price level and description]
-* Additional levels if relevant
-
-**Possible Breakout Areas:**
-* Bullish Breakout: [conditions and price targets]
-* Bearish Breakdown: [conditions and price targets]
-
-**RSI or Indicator Signals:**
-* [Indicator name]: [current reading and interpretation]
-* [Additional indicators if visible]
-
-**Trading Idea:**
-* Entry: [suggested entry strategy]
-* Stop Loss: [suggested stop loss level]
-* Target: [suggested profit target]
-* Risk Warning: [brief risk assessment]
-
-First line must be ONLY: bullish, bearish, or sideways
-Second line must be ONLY: low, medium, or high
-Then provide the detailed analysis using the sections above.
-"""
-        
-        response = model.generate_content([prompt, image])
-        
-        ai_response = response.text.strip()
-        lines = ai_response.split('\n')
-        
-        trend = lines[0].strip().lower() if len(lines) > 0 else "sideways"
-        confidence = lines[1].strip().lower() if len(lines) > 1 else "medium"
-        analysis = '\n'.join(lines[2:]).strip() if len(lines) > 2 else ai_response
-        
-        if trend not in ["bullish", "bearish", "sideways"]:
-            trend = "sideways"
-        if confidence not in ["low", "medium", "high"]:
-            confidence = "medium"
-        
-        # Kullanım sayısını artır
-        users_db[user['email']]['analyses_used'] = analyses_used + 1
-        
-        return AnalysisResponse(
-            analysis=analysis,
-            trend=trend,
-            confidence=confidence
-        )
-        
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error analyzing image: {str(e)}")
-
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+# Lemon Squeezy Payment Integration
 from lemon_squeezy import router as payment_router
 app.include_router(payment_router)
