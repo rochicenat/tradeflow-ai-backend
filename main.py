@@ -342,3 +342,5 @@ Then provide the detailed analysis using the sections above.
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
+from lemon_squeezy import router as payment_router
+app.include_router(payment_router)
