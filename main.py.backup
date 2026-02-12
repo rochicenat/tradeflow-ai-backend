@@ -77,10 +77,12 @@ async def root():
 
 @app.post("/register", response_model=Token)
 async def register(user: UserCreate, db: Session = Depends(get_db)):
+    # Email kontrolü
     existing_user = db.query(User).filter(User.email == user.email).first()
     if existing_user:
         raise HTTPException(status_code=400, detail="Email already registered")
     
+    # Yeni user oluştur
     hashed_password = pwd_context.hash(user.password)
     new_user = User(
         email=user.email,
@@ -99,10 +101,12 @@ async def register(user: UserCreate, db: Session = Depends(get_db)):
 
 @app.post("/login", response_model=Token)
 async def login(user: UserLogin, db: Session = Depends(get_db)):
+    # User'ı database'den çek
     db_user = db.query(User).filter(User.email == user.email).first()
     if not db_user:
         raise HTTPException(status_code=401, detail="Invalid credentials")
     
+    # Password kontrolü
     if not pwd_context.verify(user.password, db_user.hashed_password):
         raise HTTPException(status_code=401, detail="Invalid credentials")
     
@@ -121,6 +125,7 @@ async def get_current_user_endpoint(authorization: Optional[str] = Header(None),
         if email is None:
             raise HTTPException(status_code=401, detail="Invalid token")
         
+        # Database'den user'ı çek
         user = db.query(User).filter(User.email == email).first()
         if not user:
             raise HTTPException(status_code=401, detail="User not found")
@@ -149,10 +154,12 @@ async def analyze_image(
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         email = payload.get("sub")
         
+        # Database'den user'ı çek
         user = db.query(User).filter(User.email == email).first()
         if not user:
             raise HTTPException(status_code=401, detail="Invalid token")
         
+        # Plan limitleri
         plan_limits = {
             "free": 3,
             "pro": 50,
@@ -209,6 +216,7 @@ Then provide the detailed analysis using the sections above.
         if confidence not in ["low", "medium", "high"]:
             confidence = "medium"
         
+        # Kullanım sayısını artır
         user.analyses_used += 1
         db.commit()
         
@@ -223,13 +231,9 @@ Then provide the detailed analysis using the sections above.
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error analyzing image: {str(e)}")
 
-# Lemon Squeezy Payment Integration (ESKİ - KALACAK)
+# Lemon Squeezy Payment Integration
 from lemon_squeezy import router as payment_router
 app.include_router(payment_router)
-
-# Webhook Integration (YENİ)
-from webhook import router as webhook_router
-app.include_router(webhook_router)
 
 if __name__ == "__main__":
     import uvicorn
