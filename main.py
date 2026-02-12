@@ -131,6 +131,7 @@ async def get_current_user_endpoint(authorization: Optional[str] = Header(None),
             "plan": user.plan,
             "analyses_used": user.analyses_used,
             "subscription_status": user.subscription_status
+            "analyses_limit": user.analyses_limit,
         }
     except JWTError:
         raise HTTPException(status_code=401, detail="Invalid token")
@@ -263,6 +264,7 @@ async def get_dashboard(authorization: Optional[str] = Header(None), db: Session
             "plan": user.plan,
             "plan_name": plan_names.get(user.plan, "Free Plan"),
             "subscription_status": user.subscription_status,
+            "analyses_limit": user.analyses_limit,
             "analyses_used": user.analyses_used,
             "analyses_limit": user.analyses_limit,
             "plan_started_at": user.plan_started_at.isoformat() if user.plan_started_at else None,
