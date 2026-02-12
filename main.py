@@ -234,3 +234,39 @@ app.include_router(webhook_router)
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
+
+@app.get("/dashboard")
+async def get_dashboard(authorization: Optional[str] = Header(None), db: Session = Depends(get_db)):
+    """Dashboard bilgileri"""
+    if not authorization:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    
+    try:
+        token = authorization.replace("Bearer ", "")
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        email = payload.get("sub")
+        
+        user = db.query(User).filter(User.email == email).first()
+        if not user:
+            raise HTTPException(status_code=401, detail="User not found")
+        
+        # Plan limitleri
+        plan_names = {
+            "free": "Free Plan",
+            "pro": "Pro Plan",
+            "premium": "Premium Plan"
+        }
+        
+        return {
+            "email": user.email,
+            "name": user.name,
+            "plan": user.plan,
+            "plan_name": plan_names.get(user.plan, "Free Plan"),
+            "subscription_status": user.subscription_status,
+            "analyses_used": user.analyses_used,
+            "analyses_limit": user.analyses_limit,
+            "plan_started_at": user.plan_started_at.isoformat() if user.plan_started_at else None,
+            "plan_ends_at": user.plan_ends_at.isoformat() if user.plan_ends_at else None,
+        }
+    except JWTError:
+        raise HTTPException(status_code=401, detail="Invalid token")
