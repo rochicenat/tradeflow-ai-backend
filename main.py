@@ -272,3 +272,42 @@ async def get_dashboard(authorization: Optional[str] = Header(None), db: Session
         }
     except JWTError:
         raise HTTPException(status_code=401, detail="Invalid token")
+@app.post("/debug/upgrade-plan")
+async def debug_upgrade_plan(
+    plan: str,
+    authorization: Optional[str] = Header(None),
+    db: Session = Depends(get_db)
+):
+    """Manuel plan upgrade - sadece test için"""
+    if not authorization:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    
+    token = authorization.replace("Bearer ", "")
+    payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+    email = payload.get("sub")
+    
+    user = db.query(User).filter(User.email == email).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    plan_limits = {"free": 3, "pro": 50, "premium": 999999}
+    
+    if plan not in plan_limits:
+        raise HTTPException(status_code=400, detail="Invalid plan")
+    
+    user.plan = plan
+    user.subscription_status = "active"
+    user.analyses_limit = plan_limits[plan]
+    user.analyses_used = 0
+    user.plan_started_at = datetime.utcnow()
+    user.plan_ends_at = datetime.utcnow() + timedelta(days=30)
+    
+    db.commit()
+    db.refresh(user)
+    
+    return {
+        "message": "Plan updated",
+        "email": user.email,
+        "plan": user.plan,
+        "analyses_limit": user.analyses_limit
+    }
