@@ -130,7 +130,7 @@ async def get_current_user_endpoint(authorization: Optional[str] = Header(None),
             "name": user.name,
             "plan": user.plan,
             "analyses_used": user.analyses_used,
-            "subscription_status": user.subscription_status
+            "subscription_status": user.subscription_status,
             "analyses_limit": user.analyses_limit,
         }
     except JWTError:
@@ -263,7 +263,7 @@ async def get_dashboard(authorization: Optional[str] = Header(None), db: Session
             "name": user.name,
             "plan": user.plan,
             "plan_name": plan_names.get(user.plan, "Free Plan"),
-            "subscription_status": user.subscription_status,
+            "subscription_status": user.subscription_status,,
             "analyses_limit": user.analyses_limit,
             "analyses_used": user.analyses_used,
             "analyses_limit": user.analyses_limit,
