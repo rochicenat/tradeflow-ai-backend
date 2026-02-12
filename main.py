@@ -88,28 +88,38 @@ async def register(user: UserCreate, db: Session = Depends(get_db)):
         hashed_password=hashed_password,
         plan="free",
         analyses_used=0
-    )
-    
-    db.add(new_user)
-    db.commit()
-    db.refresh(new_user)
-    
-    access_token = create_access_token(data={"sub": user.email})
-    return {"access_token": access_token, "token_type": "bearer"}
-
-@app.post("/login", response_model=Token)
-async def login(user: UserLogin, db: Session = Depends(get_db)):
-    db_user = db.query(User).filter(User.email == user.email).first()
-    if not db_user:
-        raise HTTPException(status_code=401, detail="Invalid credentials")
-    
-    if not pwd_context.verify(user.password, db_user.hashed_password):
-        raise HTTPException(status_code=401, detail="Invalid credentials")
-    
-    access_token = create_access_token(data={"sub": user.email})
-    return {"access_token": access_token, "token_type": "bearer"}
-
 @app.get("/me")
+async def get_current_user_endpoint(authorization: Optional[str] = Header(None), db: Session = Depends(get_db)):
+    if not authorization:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    
+    try:
+        token = authorization.replace("Bearer ", "")
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        email = payload.get("sub")
+        if email is None:
+            raise HTTPException(status_code=401, detail="Invalid token")
+        
+        # FORCE FRESH QUERY
+        db.expire_all()
+        user = db.query(User).filter(User.email == email).first()
+        if not user:
+            raise HTTPException(status_code=401, detail="User not found")
+        
+        response_data = {
+            "email": user.email,
+            "name": user.name,
+            "plan": str(user.plan),  # Force string
+            "analyses_used": user.analyses_used,
+            "subscription_status": str(user.subscription_status),
+            "analyses_limit": user.analyses_limit,
+        }
+        
+        print(f"🔍 /me DEBUG - Email: {user.email}, Plan: {user.plan}, Type: {type(user.plan)}")
+        
+        return response_data
+    except JWTError:
+        raise HTTPException(status_code=401, detail="Invalid token")
 async def get_current_user_endpoint(authorization: Optional[str] = Header(None), db: Session = Depends(get_db)):
     if not authorization:
         raise HTTPException(status_code=401, detail="Not authenticated")
