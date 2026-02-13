@@ -21,7 +21,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:3000",
-        "https://tradeflow-ai-frontend-dkyc.vercel.app",
+        "https://tradeflow-ai-frontend.vercel.app", 
         "https://tradeflowai.cloud",
         "https://www.tradeflowai.cloud"
     ],
