@@ -174,26 +174,31 @@ async def analyze_image(
         image_data = await file.read()
         image = Image.open(io.BytesIO(image_data))
         
-        prompt = """Analyze this trading chart and provide a detailed technical analysis.
-IMPORTANT: Format your response EXACTLY like this (use these exact section headers):
-**Support/Resistance Zones:**
-* Immediate Resistance: [price level and description]
-* Key Support: [price level and description]
-* Additional levels if relevant
-**Possible Breakout Areas:**
-* Bullish Breakout: [conditions and price targets]
-* Bearish Breakdown: [conditions and price targets]
-**RSI or Indicator Signals:**
-* [Indicator name]: [current reading and interpretation]
-* [Additional indicators if visible]
-**Trading Idea:**
-* Entry: [suggested entry strategy]
-* Stop Loss: [suggested stop loss level]
-* Target: [suggested profit target]
-* Risk Warning: [brief risk assessment]
-First line must be ONLY: bullish, bearish, or sideways
-Second line must be ONLY: low, medium, or high
-Then provide the detailed analysis using the sections above.
+        prompt = """Analyze this trading chart and provide a concise trading signal.
+
+IMPORTANT: Your response must follow this EXACT format:
+
+Line 1: ONLY one word - BUY, SELL, or HOLD
+Line 2: ONLY one word - low, medium, or high (confidence level)
+Line 3: Entry price (e.g., "Entry: 45,230")
+Line 4: Stop Loss (e.g., "SL: 44,800")  
+Line 5: Take Profit (e.g., "TP: 46,500")
+
+Then brief analysis (max 2 bullets each):
+
+**Key Levels:**
+* Support/Resistance
+* Critical zone
+
+**Signal Reason:**
+* Why this signal
+* Key indicator
+
+**Risk:**
+* Risk level
+* R/R ratio
+
+Keep SHORT and ACTIONABLE.
 """
         
         response = model.generate_content([prompt, image])
