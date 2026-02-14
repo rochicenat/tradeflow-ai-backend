@@ -1,25 +1,14 @@
-from sqlalchemy import create_engine, text
-from dotenv import load_dotenv
-import os
+from database import User, SessionLocal
 
-load_dotenv()
-DATABASE_URL = os.getenv("DATABASE_URL")
+db = SessionLocal()
+email = input("Email: ")
+user = db.query(User).filter(User.email == email).first()
 
-if DATABASE_URL.startswith("postgresql://"):
-    DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+psycopg2://", 1)
-
-engine = create_engine(DATABASE_URL)
-
-with engine.connect() as conn:
-    result = conn.execute(text("""
-        SELECT email, plan, subscription_status, analyses_limit, analyses_used 
-        FROM users 
-        WHERE email = 'hafisaydin31@gmail.com'
-    """))
-    
-    for row in result:
-        print(f"Email: {row[0]}")
-        print(f"Plan: {row[1]}")
-        print(f"Status: {row[2]}")
-        print(f"Limit: {row[3]}")
-        print(f"Used: {row[4]}")
+if user:
+    print(f"Email: {user.email}")
+    print(f"Plan: {user.plan}")
+    print(f"Subscription Status: {user.subscription_status}")
+    print(f"Analyses Used: {user.analyses_used}")
+    print(f"Analyses Limit: {user.analyses_limit}")
+else:
+    print("User not found")

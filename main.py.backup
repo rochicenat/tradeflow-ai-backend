@@ -21,7 +21,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:3000",
-        "https://tradeflow-ai-frontend-dkyc.vercel.app",
+        "https://tradeflow-ai-frontend.vercel.app", 
         "https://tradeflowai.cloud",
         "https://www.tradeflowai.cloud"
     ],
@@ -77,12 +77,10 @@ async def root():
 
 @app.post("/register", response_model=Token)
 async def register(user: UserCreate, db: Session = Depends(get_db)):
-    # Email kontrolü
     existing_user = db.query(User).filter(User.email == user.email).first()
     if existing_user:
         raise HTTPException(status_code=400, detail="Email already registered")
     
-    # Yeni user oluştur
     hashed_password = pwd_context.hash(user.password)
     new_user = User(
         email=user.email,
@@ -101,12 +99,10 @@ async def register(user: UserCreate, db: Session = Depends(get_db)):
 
 @app.post("/login", response_model=Token)
 async def login(user: UserLogin, db: Session = Depends(get_db)):
-    # User'ı database'den çek
     db_user = db.query(User).filter(User.email == user.email).first()
     if not db_user:
         raise HTTPException(status_code=401, detail="Invalid credentials")
     
-    # Password kontrolü
     if not pwd_context.verify(user.password, db_user.hashed_password):
         raise HTTPException(status_code=401, detail="Invalid credentials")
     
@@ -125,7 +121,6 @@ async def get_current_user_endpoint(authorization: Optional[str] = Header(None),
         if email is None:
             raise HTTPException(status_code=401, detail="Invalid token")
         
-        # Database'den user'ı çek
         user = db.query(User).filter(User.email == email).first()
         if not user:
             raise HTTPException(status_code=401, detail="User not found")
@@ -135,7 +130,8 @@ async def get_current_user_endpoint(authorization: Optional[str] = Header(None),
             "name": user.name,
             "plan": user.plan,
             "analyses_used": user.analyses_used,
-            "subscription_status": user.subscription_status
+            "subscription_status": user.subscription_status,
+            "analyses_limit": user.analyses_limit,
         }
     except JWTError:
         raise HTTPException(status_code=401, detail="Invalid token")
@@ -154,12 +150,10 @@ async def analyze_image(
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         email = payload.get("sub")
         
-        # Database'den user'ı çek
         user = db.query(User).filter(User.email == email).first()
         if not user:
             raise HTTPException(status_code=401, detail="Invalid token")
         
-        # Plan limitleri
         plan_limits = {
             "free": 3,
             "pro": 50,
@@ -216,7 +210,6 @@ Then provide the detailed analysis using the sections above.
         if confidence not in ["low", "medium", "high"]:
             confidence = "medium"
         
-        # Kullanım sayısını artır
         user.analyses_used += 1
         db.commit()
         
@@ -231,10 +224,90 @@ Then provide the detailed analysis using the sections above.
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error analyzing image: {str(e)}")
 
-# Lemon Squeezy Payment Integration
+# Lemon Squeezy Payment Integration (ESKİ - KALACAK)
 from lemon_squeezy import router as payment_router
 app.include_router(payment_router)
+
+# Webhook Integration (YENİ)
+from webhook import router as webhook_router
+app.include_router(webhook_router)
 
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
+
+@app.get("/dashboard")
+async def get_dashboard(authorization: Optional[str] = Header(None), db: Session = Depends(get_db)):
+    """Dashboard bilgileri"""
+    if not authorization:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    
+    try:
+        token = authorization.replace("Bearer ", "")
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        email = payload.get("sub")
+        
+        user = db.query(User).filter(User.email == email).first()
+        if not user:
+            raise HTTPException(status_code=401, detail="User not found")
+        
+        # Plan limitleri
+        plan_names = {
+            "free": "Free Plan",
+            "pro": "Pro Plan",
+            "premium": "Premium Plan"
+        }
+        
+        return {
+            "email": user.email,
+            "name": user.name,
+            "plan": user.plan,
+            "plan_name": plan_names.get(user.plan, "Free Plan"),
+            "subscription_status": user.subscription_status,
+            "analyses_limit": user.analyses_limit,
+            "analyses_used": user.analyses_used,
+            "analyses_limit": user.analyses_limit,
+            "plan_started_at": user.plan_started_at.isoformat() if user.plan_started_at else None,
+            "plan_ends_at": user.plan_ends_at.isoformat() if user.plan_ends_at else None,
+        }
+    except JWTError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+@app.post("/debug/upgrade-plan")
+async def debug_upgrade_plan(
+    plan: str,
+    authorization: Optional[str] = Header(None),
+    db: Session = Depends(get_db)
+):
+    """Manuel plan upgrade - sadece test için"""
+    if not authorization:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    
+    token = authorization.replace("Bearer ", "")
+    payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+    email = payload.get("sub")
+    
+    user = db.query(User).filter(User.email == email).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    plan_limits = {"free": 3, "pro": 50, "premium": 999999}
+    
+    if plan not in plan_limits:
+        raise HTTPException(status_code=400, detail="Invalid plan")
+    
+    user.plan = plan
+    user.subscription_status = "active"
+    user.analyses_limit = plan_limits[plan]
+    user.analyses_used = 0
+    user.plan_started_at = datetime.utcnow()
+    user.plan_ends_at = datetime.utcnow() + timedelta(days=30)
+    
+    db.commit()
+    db.refresh(user)
+    
+    return {
+        "message": "Plan updated",
+        "email": user.email,
+        "plan": user.plan,
+        "analyses_limit": user.analyses_limit
+    }
