@@ -237,6 +237,27 @@ app.include_router(payment_router)
 from webhook import router as webhook_router
 app.include_router(webhook_router)
 
+@app.get("/analysis-history")
+def get_analysis_history(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    analyses = db.query(Analysis).filter(
+        Analysis.user_email == current_user.email
+    ).order_by(Analysis.created_at.desc()).limit(50).all()
+    
+    return [
+        {
+            "id": analysis.id,
+            "trend": analysis.trend,
+            "confidence": analysis.confidence,
+            "analysis_text": analysis.analysis_text[:200] if len(analysis.analysis_text) > 200 else analysis.analysis_text,
+            "created_at": analysis.created_at.isoformat()
+        }
+        for analysis in analyses
+    ]
+
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
