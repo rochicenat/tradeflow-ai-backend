@@ -318,12 +318,6 @@ async def debug_upgrade_plan(
     }
 
 
-@app.get("/analysis-history")
-def get_analysis_history(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    from database import Analysis
-    analyses = db.query(Analysis).filter(Analysis.user_email == current_user.email).order_by(Analysis.created_at.desc()).limit(50).all()
-    return [{"id": a.id, "trend": a.trend, "confidence": a.confidence, "analysis_text": a.analysis_text[:200] if len(a.analysis_text) > 200 else a.analysis_text, "created_at": a.created_at.isoformat()} for a in analyses]
-
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
