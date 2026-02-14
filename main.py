@@ -34,6 +34,7 @@ app.add_middleware(
     allow_origins=[
         "http://localhost:3000",
         "https://tradeflow-ai-frontend.vercel.app",
+        "https://tradeflowai.vercel.app",
         "https://tradeflowai.cloud",
         "https://www.tradeflowai.cloud"
     ],
