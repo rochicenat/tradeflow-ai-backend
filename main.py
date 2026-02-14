@@ -1,4 +1,4 @@
-from fastapi import FastAPI, UploadFile, File, HTTPException, Depends, Header
+from fastapi import FastAPI, UploadFile, File, HTTPException, Depends, Header, Form
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from database import User, Analysis, SessionLocal, engine, Base
@@ -13,31 +13,21 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# Database
 Base.metadata.create_all(bind=engine)
 
-# Security
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 SECRET_KEY = os.getenv("SECRET_KEY", "your-secret-key-change-in-production")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_DAYS = 30
 
-# Gemini AI
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 genai.configure(api_key=GOOGLE_API_KEY)
 
 app = FastAPI()
 
-# CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "https://tradeflow-ai-frontend.vercel.app",
-        "https://tradeflowai.vercel.app",
-        "https://tradeflowai.cloud",
-        "https://www.tradeflowai.cloud"
-    ],
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -84,10 +74,10 @@ def get_current_user(authorization: str = Header(None), db: Session = Depends(ge
 
 @app.get("/")
 def read_root():
-    return {"message": "DataFlow Analytics API"}
+    return {"message":"DataFlow Analytics API"}
 
 @app.post("/register")
-def register(email: str, password: str, name: str, db: Session = Depends(get_db)):
+def register(email: str = Form(...), password: str = Form(...), name: str = Form(...), db: Session = Depends(get_db)):
     existing_user = db.query(User).filter(User.email == email).first()
     if existing_user:
         raise HTTPException(status_code=400, detail="Email already registered")
@@ -110,7 +100,7 @@ def register(email: str, password: str, name: str, db: Session = Depends(get_db)
     return {"access_token": access_token, "token_type": "bearer"}
 
 @app.post("/login")
-def login(email: str, password: str, db: Session = Depends(get_db)):
+def login(email: str = Form(...), password: str = Form(...), db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == email).first()
     if not user or not verify_password(password, user.hashed_password):
         raise HTTPException(status_code=401, detail="Invalid credentials")
@@ -130,19 +120,13 @@ def get_me(current_user: User = Depends(get_current_user)):
     }
 
 @app.post("/analyze-image")
-async def analyze_image(
-    file: UploadFile = File(...),
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
-):
-    # Check limit
+async def analyze_image(file: UploadFile = File(...), current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     plan_limits = {"free": 3, "pro": 50, "premium": 999999}
     limit = plan_limits.get(current_user.plan, 3)
     
     if current_user.analyses_used >= limit:
         raise HTTPException(status_code=403, detail="Monthly analysis limit reached. Please upgrade your plan.")
     
-    # Process image
     try:
         image_data = await file.read()
         image = Image.open(io.BytesIO(image_data))
@@ -179,83 +163,39 @@ Keep it SHORT, EDUCATIONAL, and DATA-FOCUSED. This is for research purposes only
         response = model.generate_content([prompt, image])
         analysis_text = response.text
         
-        # Parse trend and confidence
         lines = analysis_text.split('\n')
         trend_line = lines[0].strip() if len(lines) > 0 else "NEUTRAL"
         confidence_line = lines[1].strip() if len(lines) > 1 else "medium"
         
-        # Map to expected format
-        trend_map = {
-            "UPTREND": "bullish",
-            "DOWNTREND": "bearish", 
-            "NEUTRAL": "sideways"
-        }
+        trend_map = {"UPTREND": "bullish", "DOWNTREND": "bearish", "NEUTRAL": "sideways"}
         trend = trend_map.get(trend_line.upper(), "sideways")
         
-        # Save to history
-        analysis_record = Analysis(
-            user_email=current_user.email,
-            trend=trend,
-            confidence=confidence_line,
-            analysis_text=analysis_text
-        )
+        analysis_record = Analysis(user_email=current_user.email, trend=trend, confidence=confidence_line, analysis_text=analysis_text)
         db.add(analysis_record)
         
-        # Increment usage
         current_user.analyses_used += 1
         db.commit()
         
-        return {
-            "analysis": analysis_text,
-            "trend": trend,
-            "confidence": confidence_line
-        }
+        return {"analysis": analysis_text, "trend": trend, "confidence": confidence_line}
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/analysis-history")
-def get_analysis_history(
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
-):
-    analyses = db.query(Analysis).filter(
-        Analysis.user_email == current_user.email
-    ).order_by(Analysis.created_at.desc()).limit(50).all()
-    
-    return [
-        {
-            "id": analysis.id,
-            "trend": analysis.trend,
-            "confidence": analysis.confidence,
-            "analysis_text": analysis.analysis_text[:200] if len(analysis.analysis_text) > 200 else analysis.analysis_text,
-            "created_at": analysis.created_at.isoformat()
-        }
-        for analysis in analyses
-    ]
+def get_analysis_history(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    analyses = db.query(Analysis).filter(Analysis.user_email == current_user.email).order_by(Analysis.created_at.desc()).limit(50).all()
+    return [{"id": a.id, "trend": a.trend, "confidence": a.confidence, "analysis_text": a.analysis_text[:200] if len(a.analysis_text) > 200 else a.analysis_text, "created_at": a.created_at.isoformat()} for a in analyses]
 
 @app.post("/debug/upgrade-plan")
-def debug_upgrade_plan(
-    plan: str,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
-):
+def debug_upgrade_plan(plan: str, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     plan_limits = {"free": 3, "pro": 50, "premium": 999999}
-    
     if plan not in plan_limits:
         raise HTTPException(status_code=400, detail="Invalid plan")
-    
     current_user.plan = plan
     current_user.analyses_limit = plan_limits[plan]
     current_user.subscription_status = "active" if plan != "free" else "inactive"
     db.commit()
-    
-    return {
-        "message": "Plan updated",
-        "email": current_user.email,
-        "plan": current_user.plan,
-        "analyses_limit": current_user.analyses_limit
-    }
+    return {"message": "Plan updated", "email": current_user.email, "plan": current_user.plan, "analyses_limit": current_user.analyses_limit}
 
 if __name__ == "__main__":
     import uvicorn
