@@ -53,6 +53,18 @@ def get_db():
     finally:
         db.close()
 
+
+
+class Analysis(Base):
+    __tablename__ = "analyses"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_email = Column(String, ForeignKey("users.email"))
+    trend = Column(String)
+    confidence = Column(String)
+    analysis_text = Column(Text)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
 def init_db():
     """Create all tables"""
     Base.metadata.create_all(bind=engine)
@@ -66,11 +78,3 @@ from sqlalchemy.orm import relationship
 from datetime import datetime
 
 class Analysis(Base):
-    __tablename__ = "analyses"
-    
-    id = Column(Integer, primary_key=True, index=True)
-    user_email = Column(String, ForeignKey("users.email"))
-    trend = Column(String)
-    confidence = Column(String)
-    analysis_text = Column(Text)
-    created_at = Column(DateTime, default=datetime.utcnow)
