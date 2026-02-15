@@ -131,7 +131,7 @@ async def analyze_image(file: UploadFile = File(...), current_user: User = Depen
         image_data = await file.read()
         image = Image.open(io.BytesIO(image_data))
         
-        model = genai.GenerativeModel('gemini-2.0-flash-exp')
+        model = genai.GenerativeModel('gemini-1.5-flash')
         
         prompt = """Analyze this market chart and provide educational data analysis.
 
