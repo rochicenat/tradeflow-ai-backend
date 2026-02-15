@@ -71,7 +71,7 @@ def get_current_user(authorization: str = Header(None), db: Session = Depends(ge
 
 @app.get("/")
 def read_root():
-    return {"message": "DataFlow Analytics API", "status": "running"}
+    return {"message": "TradeFlow AI API", "status": "running"}
 
 @app.post("/register")
 def register(email: str = Form(...), password: str = Form(...), name: str = Form(...), db: Session = Depends(get_db)):
