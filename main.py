@@ -123,7 +123,7 @@ async def analyze_image(file: UploadFile = File(...), current_user: User = Depen
         image = Image.open(io.BytesIO(image_bytes))
         
         # Gemini 1.5 Flash kullan
-        model = genai.GenerativeModel('gemini-1.5-flash')
+        model = genai.GenerativeModel('gemini-pro-vision')
         
         prompt = """Analyze this chart. Respond in this EXACT format:
 
