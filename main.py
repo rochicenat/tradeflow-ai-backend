@@ -122,10 +122,44 @@ async def analyze_image(file: UploadFile = File(...), current_user: User = Depen
         image_bytes = await file.read()
         image = Image.open(io.BytesIO(image_bytes))
         
-        # Gemini 1.5 Flash kullan
+        # Gemini model
         model = genai.GenerativeModel('gemini-2.5-flash')
         
-        prompt = """Analyze this chart. Respond in this EXACT format:
+        # STEP 1: Validate if it's a trading chart
+        validation_prompt = """Is this image a trading chart, price chart, candlestick chart, or financial market graph?
+
+Answer ONLY "YES" or "NO".
+
+YES if the image contains:
+- Candlestick charts
+- Line charts with price movements
+- Bar charts with OHLC data
+- Technical indicators (MA, RSI, etc.)
+- Price levels and timeframes
+- Forex, crypto, stock, or commodity charts
+
+NO if the image is:
+- A person's photo
+- Random objects
+- Food, animals, nature
+- Screenshots without charts
+- Text documents
+- Non-financial content
+
+Answer:"""
+        
+        validation_response = model.generate_content([validation_prompt, image])
+        validation_text = validation_response.text.strip().upper()
+        
+        # Check if it's NOT a chart
+        if "NO" in validation_text or "NOT" in validation_text:
+            raise HTTPException(
+                status_code=400,
+                detail="❌ This image does not appear to be a trading chart. Please upload a valid price chart, candlestick chart, or financial graph showing market data."
+            )
+        
+        # STEP 2: If validated, proceed with full analysis
+        analysis_prompt = """Analyze this trading chart. Respond in this EXACT format:
 
 Line 1: UPTREND or DOWNTREND or NEUTRAL
 Line 2: low or medium or high
@@ -147,7 +181,7 @@ Line 5: Upper: [price]
 
 Educational analysis only, not financial advice."""
         
-        response = model.generate_content([prompt, image])
+        response = model.generate_content([analysis_prompt, image])
         analysis_text = response.text
         
         lines = analysis_text.split('\n')
@@ -170,8 +204,11 @@ Educational analysis only, not financial advice."""
         
         return {"analysis": analysis_text, "trend": trend, "confidence": confidence_line}
         
+    except HTTPException:
+        # Re-raise validation errors
+        raise
     except Exception as e:
-        print(f"ERROR: {str(e)}")  # Railway logs'da görünecek
+        print(f"ERROR: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Analysis failed: {str(e)}")
 
 @app.get("/analysis-history")
@@ -193,4 +230,3 @@ def upgrade_plan(plan: str, current_user: User = Depends(get_current_user), db: 
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
