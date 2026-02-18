@@ -259,3 +259,19 @@ def update_profile(profile: ProfileUpdate, current_user: User = Depends(get_curr
     current_user.name = profile.name
     db.commit()
     return {"message": "Profile updated successfully", "name": profile.name}
+
+class PasswordChange(BaseModel):
+    current_password: str
+    new_password: str
+
+@app.post("/change-password")
+def change_password(passwords: PasswordChange, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    if not verify_password(passwords.current_password, current_user.hashed_password):
+        raise HTTPException(status_code=400, detail="Current password is incorrect")
+    
+    if len(passwords.new_password) < 6:
+        raise HTTPException(status_code=400, detail="New password must be at least 6 characters")
+    
+    current_user.hashed_password = get_password_hash(passwords.new_password)
+    db.commit()
+    return {"message": "Password changed successfully"}
