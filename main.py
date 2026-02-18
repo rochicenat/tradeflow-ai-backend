@@ -9,6 +9,7 @@ import google.generativeai as genai
 from PIL import Image
 import io
 import os
+from pydantic import BaseModel
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -249,7 +250,6 @@ def delete_analysis(analysis_id: int, current_user: User = Depends(get_current_u
 def update_profile(name: str = Form(...), current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     current_user.name = name
 
-from pydantic import BaseModel
 
 class ProfileUpdate(BaseModel):
     name: str
