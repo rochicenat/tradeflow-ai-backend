@@ -250,3 +250,9 @@ def update_profile(name: str = Form(...), current_user: User = Depends(get_curre
     current_user.name = name
     db.commit()
     return {"message": "Profile updated successfully", "name": name}
+
+@app.post("/update-profile")
+def update_profile(name: str = Form(...), current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    current_user.name = name
+    db.commit()
+    return {"message": "Profile updated successfully", "name": name}
