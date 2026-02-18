@@ -244,3 +244,9 @@ def delete_analysis(analysis_id: int, current_user: User = Depends(get_current_u
     db.delete(analysis)
     db.commit()
     return {"message": "Analysis deleted successfully"}
+
+@app.post("/update-profile")
+def update_profile(name: str = Form(...), current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    current_user.name = name
+    db.commit()
+    return {"message": "Profile updated successfully", "name": name}
