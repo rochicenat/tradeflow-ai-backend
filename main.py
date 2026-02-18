@@ -248,11 +248,14 @@ def delete_analysis(analysis_id: int, current_user: User = Depends(get_current_u
 @app.post("/update-profile")
 def update_profile(name: str = Form(...), current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     current_user.name = name
-    db.commit()
-    return {"message": "Profile updated successfully", "name": name}
+
+from pydantic import BaseModel
+
+class ProfileUpdate(BaseModel):
+    name: str
 
 @app.post("/update-profile")
-def update_profile(name: str = Form(...), current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    current_user.name = name
+def update_profile(profile: ProfileUpdate, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    current_user.name = profile.name
     db.commit()
-    return {"message": "Profile updated successfully", "name": name}
+    return {"message": "Profile updated successfully", "name": profile.name}
