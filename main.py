@@ -124,7 +124,7 @@ async def analyze_image(file: UploadFile = File(...), current_user: User = Depen
         image = Image.open(io.BytesIO(image_bytes))
         
         # Gemini model
-        model = genai.GenerativeModel('gemini-2.5-flash')
+        model = genai.GenerativeModel('gemini-1.5-flash')
         
         # STEP 1: Validate if it's a trading chart
         validation_prompt = """Is this image a trading chart, price chart, candlestick chart, or financial market graph?
