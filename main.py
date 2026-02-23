@@ -5,7 +5,8 @@ from database import User, Analysis, SessionLocal, engine, Base
 from passlib.context import CryptContext
 from jose import JWTError, jwt
 from datetime import datetime, timedelta
-import google.generativeai as genai
+from google import genai
+from google.genai import types
 from PIL import Image
 import io
 import os
@@ -35,7 +36,7 @@ PLAN_LIMITS = {
     "premium": 999999
 }
 
-genai.configure(api_key=GOOGLE_API_KEY)
+client = genai.Client(api_key=GOOGLE_API_KEY)
 app = FastAPI()
 
 app.add_middleware(
@@ -128,7 +129,7 @@ async def analyze_image(
     try:
         image_bytes = await file.read()
         image = Image.open(io.BytesIO(image_bytes))
-        model = genai.GenerativeModel('gemini-2.5-flash')
+        
         validation_prompt = """Is this image a trading chart, price chart, candlestick chart, or financial market graph?
 Answer ONLY "YES" or "NO".
 YES if the image contains:
@@ -146,7 +147,10 @@ NO if the image is:
 - Text documents
 - Non-financial content
 Answer:"""
-        validation_response = model.generate_content([validation_prompt, image])
+        validation_response = client.models.generate_content(
+        model="gemini-2.5-flash",
+        contents=[validation_prompt, types.Part.from_bytes(data=image_bytes, mime_type=file.content_type)]
+    )
         validation_text = validation_response.text.strip().upper()
         if "NO" in validation_text or "NOT" in validation_text:
             raise HTTPException(
@@ -201,7 +205,10 @@ Line 5: Upper: [price]
 * [win probability for swing]
 * [risk/reward ratio]
 Educational analysis only, not financial advice."""
-        response = model.generate_content([analysis_prompt, image])
+        response = client.models.generate_content(
+        model="gemini-2.5-flash",
+        contents=[analysis_prompt, types.Part.from_bytes(data=image_bytes, mime_type=file.content_type)]
+    )
         analysis_text = response.text
         lines = analysis_text.split('\n')
         trend_line = lines[0].strip().upper() if len(lines) > 0 else "NEUTRAL"
