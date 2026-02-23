@@ -308,8 +308,14 @@ def delete_analysis(analysis_id: int, current_user: User = Depends(get_current_u
     db.commit()
     return {"message": "Analysis deleted"}
 
+class ChangePasswordRequest(BaseModel):
+    current_password: str
+    new_password: str
+
 @app.post("/change-password")
-def change_password(current_password: str = Form(...), new_password: str = Form(...), current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+def change_password(request: ChangePasswordRequest, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    current_password = request.current_password
+    new_password = request.new_password
     if not verify_password(current_password, current_user.hashed_password):
         raise HTTPException(status_code=400, detail="Current password is incorrect")
     if len(new_password) < 6:
