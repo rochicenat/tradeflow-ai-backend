@@ -307,3 +307,13 @@ def delete_analysis(analysis_id: int, current_user: User = Depends(get_current_u
     db.delete(analysis)
     db.commit()
     return {"message": "Analysis deleted"}
+
+@app.post("/change-password")
+def change_password(current_password: str = Form(...), new_password: str = Form(...), current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    if not verify_password(current_password, current_user.hashed_password):
+        raise HTTPException(status_code=400, detail="Current password is incorrect")
+    if len(new_password) < 6:
+        raise HTTPException(status_code=400, detail="Password must be at least 6 characters")
+    current_user.hashed_password = get_password_hash(new_password)
+    db.commit()
+    return {"message": "Password updated successfully"}
