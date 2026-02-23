@@ -298,3 +298,12 @@ def delete_analysis(analysis_id: int, current_user: User = Depends(get_current_u
     db.delete(analysis)
     db.commit()
     return {"message": "Analysis deleted"}
+
+@app.delete("/delete-analysis/{analysis_id}")
+def delete_analysis(analysis_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    analysis = db.query(Analysis).filter(Analysis.id == analysis_id, Analysis.user_email == current_user.email).first()
+    if not analysis:
+        raise HTTPException(status_code=404, detail="Analysis not found")
+    db.delete(analysis)
+    db.commit()
+    return {"message": "Analysis deleted"}
