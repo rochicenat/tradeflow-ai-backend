@@ -10,3 +10,4 @@ pillow
 google-genai
 python-dotenv
 httpx
+authlib

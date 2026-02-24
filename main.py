@@ -400,3 +400,80 @@ async def get_crypto_news():
         return {"news": news[:25]}
     except Exception as e:
         return {"news": [], "error": str(e)}
+
+GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
+GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
+GOOGLE_REDIRECT_URI = "https://tradeflow-ai-backend-production.up.railway.app/auth/google/callback"
+FRONTEND_URL = "https://tradeflowai.cloud"
+
+@app.get("/auth/google")
+async def google_login():
+    params = {
+        "client_id": GOOGLE_CLIENT_ID,
+        "redirect_uri": GOOGLE_REDIRECT_URI,
+        "response_type": "code",
+        "scope": "openid email profile",
+        "access_type": "offline",
+    }
+    from urllib.parse import urlencode
+    url = "https://accounts.google.com/o/oauth2/v2/auth?" + urlencode(params)
+    from fastapi.responses import RedirectResponse
+    return RedirectResponse(url)
+
+@app.get("/auth/google/callback")
+async def google_callback(code: str, db: Session = Depends(get_db)):
+    try:
+        async with httpx.AsyncClient() as client:
+            # Token al
+            token_response = await client.post(
+                "https://oauth2.googleapis.com/token",
+                data={
+                    "code": code,
+                    "client_id": GOOGLE_CLIENT_ID,
+                    "client_secret": GOOGLE_CLIENT_SECRET,
+                    "redirect_uri": GOOGLE_REDIRECT_URI,
+                    "grant_type": "authorization_code",
+                }
+            )
+            token_data = token_response.json()
+            access_token = token_data.get("access_token")
+            if not access_token:
+                from fastapi.responses import RedirectResponse
+                return RedirectResponse(f"{FRONTEND_URL}/login?error=google_failed")
+
+            # Kullanıcı bilgilerini al
+            user_response = await client.get(
+                "https://www.googleapis.com/oauth2/v2/userinfo",
+                headers={"Authorization": f"Bearer {access_token}"}
+            )
+            user_info = user_response.json()
+            email = user_info.get("email")
+            name = user_info.get("name", email)
+
+            if not email:
+                from fastapi.responses import RedirectResponse
+                return RedirectResponse(f"{FRONTEND_URL}/login?error=no_email")
+
+            # Kullanıcıyı bul veya oluştur
+            user = db.query(User).filter(User.email == email).first()
+            if not user:
+                user = User(
+                    name=name,
+                    email=email,
+                    hashed_password=get_password_hash(os.urandom(32).hex()),
+                    plan="free",
+                    analyses_used=0,
+                    analyses_limit=3,
+                )
+                db.add(user)
+                db.commit()
+                db.refresh(user)
+
+            # JWT token oluştur
+            jwt_token = create_access_token({"sub": user.email})
+            from fastapi.responses import RedirectResponse
+            return RedirectResponse(f"{FRONTEND_URL}/auth/callback?token={jwt_token}")
+
+    except Exception as e:
+        from fastapi.responses import RedirectResponse
+        return RedirectResponse(f"{FRONTEND_URL}/login?error={str(e)}")
