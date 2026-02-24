@@ -364,33 +364,39 @@ def change_password(request: ChangePasswordRequest, current_user: User = Depends
     return {"message": "Password updated successfully"}
 
 import httpx
+import xml.etree.ElementTree as ET
 
 @app.get("/news")
 async def get_crypto_news():
     try:
-        async with httpx.AsyncClient() as client:
-            response = await client.get(
-                "https://cryptopanic.com/api/v1/posts/",
-                params={
-                    "auth_token": "16d954a9b3661004b7aea01e5c5380b6aec0d335",
-                    "public": "true",
-                    "kind": "news",
-                    "limit": 20
-                },
-                timeout=10
-            )
-            data = response.json()
-            results = data.get("results", [])
-            news = []
-            for item in results:
-                news.append({
-                    "title": item.get("title", ""),
-                    "url": item.get("url", ""),
-                    "source": item.get("source", {}).get("title", ""),
-                    "published_at": item.get("published_at", ""),
-                    "currencies": [c.get("code", "") for c in item.get("currencies", [])],
-                    "votes": item.get("votes", {}),
-                })
-            return {"news": news}
+        feeds = [
+            "https://cointelegraph.com/rss",
+            "https://coindesk.com/arc/outboundfeeds/rss/",
+        ]
+        news = []
+        async with httpx.AsyncClient(timeout=10, follow_redirects=True) as client:
+            for feed_url in feeds:
+                try:
+                    response = await client.get(feed_url, headers={"User-Agent": "Mozilla/5.0"})
+                    root = ET.fromstring(response.text)
+                    channel = root.find("channel")
+                    if channel is None:
+                        continue
+                    source_name = channel.findtext("title", "").strip()
+                    for item in channel.findall("item")[:10]:
+                        title = item.findtext("title", "").strip()
+                        url = item.findtext("link", "").strip()
+                        pub_date = item.findtext("pubDate", "").strip()
+                        if title and url:
+                            news.append({
+                                "title": title,
+                                "url": url,
+                                "source": source_name,
+                                "published_at": pub_date,
+                                "currencies": [],
+                            })
+                except Exception:
+                    continue
+        return {"news": news[:25]}
     except Exception as e:
         return {"news": [], "error": str(e)}
