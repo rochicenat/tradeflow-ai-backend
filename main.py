@@ -497,3 +497,10 @@ async def update_profile(request: Request, current_user: User = Depends(get_curr
     current_user.name = name
     db.commit()
     return {"message": "Profile updated successfully"}
+
+@app.delete("/delete-account")
+async def delete_account(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    db.query(Analysis).filter(Analysis.user_id == current_user.id).delete()
+    db.delete(current_user)
+    db.commit()
+    return {"message": "Account deleted successfully"}
