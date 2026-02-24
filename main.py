@@ -11,6 +11,7 @@ from PIL import Image
 import io
 import os
 import hmac
+import httpx
 import hashlib
 import json
 from pydantic import BaseModel
@@ -361,3 +362,35 @@ def change_password(request: ChangePasswordRequest, current_user: User = Depends
     current_user.hashed_password = get_password_hash(new_password)
     db.commit()
     return {"message": "Password updated successfully"}
+
+import httpx
+
+@app.get("/news")
+async def get_crypto_news():
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.get(
+                "https://cryptopanic.com/api/v1/posts/",
+                params={
+                    "auth_token": "16d954a9b3661004b7aea01e5c5380b6aec0d335",
+                    "public": "true",
+                    "kind": "news",
+                    "limit": 20
+                },
+                timeout=10
+            )
+            data = response.json()
+            results = data.get("results", [])
+            news = []
+            for item in results:
+                news.append({
+                    "title": item.get("title", ""),
+                    "url": item.get("url", ""),
+                    "source": item.get("source", {}).get("title", ""),
+                    "published_at": item.get("published_at", ""),
+                    "currencies": [c.get("code", "") for c in item.get("currencies", [])],
+                    "votes": item.get("votes", {}),
+                })
+            return {"news": news}
+    except Exception as e:
+        return {"news": [], "error": str(e)}

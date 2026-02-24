@@ -9,3 +9,4 @@ python-multipart
 pillow
 google-genai
 python-dotenv
+httpx
