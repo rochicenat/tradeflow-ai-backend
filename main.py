@@ -487,3 +487,13 @@ async def update_profile(request: Request, current_user: User = Depends(get_curr
     current_user.name = name
     db.commit()
     return {"message": "Profile updated successfully"}
+
+@app.post("/update-profile")
+async def update_profile(request: Request, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    data = await request.json()
+    name = data.get("name", "").strip()
+    if not name:
+        raise HTTPException(status_code=400, detail="Name cannot be empty")
+    current_user.name = name
+    db.commit()
+    return {"message": "Profile updated successfully"}
