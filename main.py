@@ -158,52 +158,72 @@ Answer:"""
                 detail="❌ This image does not appear to be a trading chart. Please upload a valid price chart, candlestick chart, or financial graph showing market data."
             )
         if analysis_type == "scalp":
-            analysis_prompt = """Analyze this trading chart for SCALP TRADING (1-15 minute timeframes, quick entries and exits).
-Focus on:
-- Short-term momentum and micro price action
-- Immediate support/resistance levels
-- Quick entry and exit points
-- Short-term indicators (RSI, MACD, volume spikes)
-- Tight stop losses and small take profits
-Respond in this EXACT format:
-Line 1: UPTREND or DOWNTREND or NEUTRAL
-Line 2: low or medium or high
-Line 3: Reference: [price]
-Line 4: Lower: [price]
-Line 5: Upper: [price]
+            analysis_prompt = """You are an expert scalp trader. Analyze this trading chart for SCALP TRADING (1-15 minute timeframes).
+
+SCALP TRADING RULES:
+- Trades last 1-30 minutes maximum
+- Target: 5-20 pips / 0.1-0.5% price move
+- Stop loss: very tight, 3-10 pips
+- High win rate required (60%+)
+- Entry must be precise, momentum-based
+
+Analyze the chart and respond in this EXACT format (no extra text):
+
+UPTREND or DOWNTREND or NEUTRAL
+low or medium or high
+Reference: [current price or entry zone]
+Lower: [stop loss price - tight, 3-10 pips away]
+Upper: [take profit price - realistic scalp target]
+
 **Key Levels:**
-* [level 1]
-* [level 2]
+* [immediate support level with price]
+* [immediate resistance level with price]
+* [any nearby liquidity zone]
+
 **Pattern Analysis:**
-* [short-term pattern or signal]
-* [momentum indicator reading]
+* [candlestick pattern visible - e.g. engulfing, pin bar, doji]
+* [momentum signal - RSI overbought/oversold, MACD cross, volume spike]
+* [microstructure - break of structure, liquidity grab, fake-out]
+
 **Risk Assessment:**
-* [win probability for scalp]
-* [risk/reward ratio]
+* [win probability % for this scalp setup]
+* [risk/reward ratio - e.g. 1:2]
+* [recommended position size note - high/medium/low risk]
+
 Educational analysis only, not financial advice."""
         else:
-            analysis_prompt = """Analyze this trading chart for SWING TRADING (multi-day trends, holding positions days to weeks).
-Focus on:
-- Multi-day trend direction and strength
-- Major support/resistance zones
-- Swing highs and lows
-- Trend-following indicators (MA crossovers, trend lines)
-- Wider stop losses with larger take profit targets
-Respond in this EXACT format:
-Line 1: UPTREND or DOWNTREND or NEUTRAL
-Line 2: low or medium or high
-Line 3: Reference: [price]
-Line 4: Lower: [price]
-Line 5: Upper: [price]
+            analysis_prompt = """You are an expert swing trader. Analyze this trading chart for SWING TRADING (holding positions 2-10 days).
+
+SWING TRADING RULES:
+- Trades last 2-10 days
+- Target: 2-8% price move or 50-200 pips
+- Stop loss: wider, below/above key structure
+- Look for high-probability setups at key zones
+- Trend confirmation required
+
+Analyze the chart and respond in this EXACT format (no extra text):
+
+UPTREND or DOWNTREND or NEUTRAL
+low or medium or high
+Reference: [current price or entry zone]
+Lower: [stop loss price - below key support/resistance]
+Upper: [take profit price - next major level]
+
 **Key Levels:**
-* [level 1]
-* [level 2]
+* [major support zone with price]
+* [major resistance zone with price]
+* [weekly/daily key level if visible]
+
 **Pattern Analysis:**
-* [multi-day pattern or trend]
-* [trend indicator reading]
+* [chart pattern - e.g. bull flag, head & shoulders, double bottom, triangle]
+* [trend indicator - MA alignment, trend line break, higher highs/lows]
+* [confluence factors - multiple timeframe alignment, volume confirmation]
+
 **Risk Assessment:**
-* [win probability for swing]
-* [risk/reward ratio]
+* [win probability % for this swing setup]
+* [risk/reward ratio - e.g. 1:3]
+* [market condition note - trending/ranging/choppy]
+
 Educational analysis only, not financial advice."""
         response = client.models.generate_content(
         model="gemini-2.5-flash",
