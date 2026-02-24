@@ -66,6 +66,15 @@ def create_access_token(data: dict):
     to_encode.update({"exp": expire})
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
+def check_and_reset_monthly(user, db):
+    from datetime import datetime
+    now = datetime.utcnow()
+    last_reset = user.last_reset_at or user.plan_started_at or user.created_at
+    if last_reset and (now - last_reset).days >= 30:
+        user.analyses_used = 0
+        user.last_reset_at = now
+        db.commit()
+
 def get_current_user(authorization: str = Header(...), db: Session = Depends(get_db)):
     try:
         token = authorization.replace("Bearer ", "")
@@ -105,7 +114,8 @@ def login(username: str = Form(...), password: str = Form(...), db: Session = De
     return {"access_token": token, "token_type": "bearer"}
 
 @app.get("/me")
-def get_me(current_user: User = Depends(get_current_user)):
+def get_me(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    check_and_reset_monthly(current_user, db)
     return {
         "email": current_user.email,
         "name": current_user.name,
@@ -123,6 +133,7 @@ async def analyze_image(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
+    check_and_reset_monthly(current_user, db)
     limit = PLAN_LIMITS.get(current_user.plan, 3)
     if current_user.analyses_used >= limit:
         raise HTTPException(status_code=403, detail="Monthly analysis limit reached")
