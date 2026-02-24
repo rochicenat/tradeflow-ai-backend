@@ -477,3 +477,13 @@ async def google_callback(code: str, db: Session = Depends(get_db)):
     except Exception as e:
         from fastapi.responses import RedirectResponse
         return RedirectResponse(f"{FRONTEND_URL}/login?error={str(e)}")
+
+@app.post("/update-profile")
+async def update_profile(request: Request, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    data = await request.json()
+    name = data.get("name", "").strip()
+    if not name:
+        raise HTTPException(status_code=400, detail="Name cannot be empty")
+    current_user.name = name
+    db.commit()
+    return {"message": "Profile updated successfully"}
