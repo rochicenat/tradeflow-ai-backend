@@ -525,7 +525,7 @@ async def forgot_password(email: str = Form(...), db: Session = Depends(get_db))
             res = await client.post(
                 "https://api.resend.com/emails",
                 headers={"Authorization": f"Bearer {RESEND_API_KEY}", "Content-Type": "application/json"},
-                json={"from": "TradeFlow AI <onboarding@resend.dev>", "to": [email], "subject": "TradeFlow AI - Password Reset", "html": body}
+                json={"from": "TradeFlow AI <noreply@tradeflowai.cloud>", "to": [email], "subject": "TradeFlow AI - Password Reset", "html": body}
             )
             if res.status_code != 200:
                 print(f"Resend error: {res.text}")
