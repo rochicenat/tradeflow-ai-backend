@@ -144,6 +144,10 @@ def get_me(current_user: User = Depends(get_current_user), db: Session = Depends
 async def analyze_image(
     file: UploadFile = File(...),
     analysis_type: str = Form(default="swing"),
+    account_size: str = Form(default=""),
+    risk_percent: str = Form(default="2"),
+    leverage: str = Form(default="1"),
+    order_type: str = Form(default="market"),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -182,9 +186,28 @@ Answer:"""
                 status_code=400,
                 detail="❌ This image does not appear to be a trading chart. Please upload a valid price chart, candlestick chart, or financial graph showing market data."
             )
+        trading_params = ""
+        if account_size and analysis_type in ("scalp_premium", "swing_premium"):
+            try:
+                acc = float(account_size)
+                risk = float(risk_percent) / 100
+                lev = float(leverage)
+                risk_amount = acc * risk
+                position_size = risk_amount * lev
+                trading_params = f"""
+TRADER PARAMETERS (use these for precise calculations):
+- Account Size: ${acc:,.0f}
+- Risk Per Trade: {risk_percent}% = ${risk_amount:,.0f}
+- Leverage: {lev}x
+- Order Type: {order_type}
+- Max Position Size: ${position_size:,.0f}
+Use these to calculate exact lot sizes, position sizes, and adjust TP/SL accordingly.
+RSI is critically important - always mention exact RSI value and signal."""
+            except:
+                pass
         if analysis_type in ("scalp_premium", "swing_premium"):
             if analysis_type == "scalp_premium":
-                analysis_prompt = """You are an expert scalp trader. Analyze this trading chart for PREMIUM SCALP TRADING analysis.
+                analysis_prompt = f"""You are an expert scalp trader. Analyze this trading chart for PREMIUM SCALP TRADING analysis.
 Analyze the chart and respond in this EXACT format (no extra text):
 UPTREND or DOWNTREND or NEUTRAL
 low or medium or high
@@ -219,9 +242,10 @@ Upper: [take profit price - realistic scalp target]
 * [recommended entry trigger - exact condition to enter]
 * [trade management - when to move stop to breakeven]
 * [invalidation level - when to cancel the trade]
+{trading_params}
 Educational analysis only, not financial advice."""
             else:
-                analysis_prompt = """You are an expert swing trader. Analyze this trading chart for PREMIUM SWING TRADING analysis.
+                analysis_prompt = f"""You are an expert swing trader. Analyze this trading chart for PREMIUM SWING TRADING analysis.
 Analyze the chart and respond in this EXACT format (no extra text):
 UPTREND or DOWNTREND or NEUTRAL
 low or medium or high
@@ -256,6 +280,7 @@ Upper: [take profit price - next major level]
 * [recommended entry trigger - exact condition to enter]
 * [trade management - partial profits, trailing stop]
 * [invalidation level - when to cancel the trade]
+{trading_params}
 Educational analysis only, not financial advice."""
         elif analysis_type == "scalp":
             analysis_prompt = """You are an expert scalp trader. Analyze this trading chart for SCALP TRADING (1-15 minute timeframes).
