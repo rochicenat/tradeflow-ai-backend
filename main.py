@@ -96,21 +96,34 @@ class RegisterRequest(BaseModel):
     password: str
 
 @app.post("/register")
-def register(name: str = Form(...), email: str = Form(...), password: str = Form(...), db: Session = Depends(get_db)):
+async def register(name: str = Form(...), email: str = Form(...), password: str = Form(...), db: Session = Depends(get_db)):
     if db.query(User).filter(User.email == email).first():
         raise HTTPException(status_code=400, detail="Email already registered")
-    user = User(name=name, email=email, hashed_password=get_password_hash(password))
+    verification_token = secrets.token_urlsafe(32)
+    user = User(name=name, email=email, hashed_password=get_password_hash(password), is_verified=False, verification_token=verification_token)
     db.add(user)
     db.commit()
     db.refresh(user)
-    token = create_access_token({"sub": user.email})
-    return {"access_token": token, "token_type": "bearer"}
+    verify_link = f"https://tradeflow-ai-backend-production.up.railway.app/verify-email?token={verification_token}"
+    body = f"""<html><body><h2>Verify your email</h2><p>Click below to verify your TradeFlow AI account.</p><a href="{verify_link}" style="background:#f97316;color:white;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:bold;">Verify Email</a></body></html>"""
+    try:
+        async with httpx.AsyncClient() as client:
+            await client.post(
+                "https://api.resend.com/emails",
+                headers={"Authorization": f"Bearer {RESEND_API_KEY}", "Content-Type": "application/json"},
+                json={"from": "TradeFlow AI <noreply@tradeflowai.cloud>", "to": [email], "subject": "Verify your TradeFlow AI account", "html": body}
+            )
+    except Exception as e:
+        print(f"Verification email error: {e}")
+    return {"message": "Registration successful. Please check your email to verify your account."}
 
 @app.post("/login")
 def login(username: str = Form(...), password: str = Form(...), db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == username).first()
     if not user or not verify_password(password, user.hashed_password):
         raise HTTPException(status_code=401, detail="Invalid credentials")
+    if not user.is_verified:
+        raise HTTPException(status_code=403, detail="Please verify your email before logging in")
     token = create_access_token({"sub": user.email})
     return {"access_token": token, "token_type": "bearer"}
 
@@ -566,7 +579,21 @@ async def migrate_db():
         try:
             conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_token VARCHAR"))
             conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_token_expires TIMESTAMP"))
+            conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS is_verified BOOLEAN DEFAULT FALSE"))
+            conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS verification_token VARCHAR"))
+            conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_token_expires TIMESTAMP"))
             conn.commit()
             print("✅ Migration done")
         except Exception as e:
             print(f"Migration skipped: {e}")
+
+@app.get("/verify-email")
+def verify_email(token: str, db: Session = Depends(get_db)):
+    from fastapi.responses import RedirectResponse
+    user = db.query(User).filter(User.verification_token == token).first()
+    if not user:
+        raise HTTPException(status_code=400, detail="Invalid verification token")
+    user.is_verified = True
+    user.verification_token = None
+    db.commit()
+    return RedirectResponse(url="https://www.tradeflowai.cloud/login?verified=true")
