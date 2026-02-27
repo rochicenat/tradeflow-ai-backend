@@ -571,3 +571,15 @@ async def reset_password(data: ResetPasswordRequest, db: Session = Depends(get_d
     db.commit()
     
     return {"message": "Password reset successfully"}
+
+@app.on_event("startup")
+async def migrate_db():
+    from sqlalchemy import text
+    with engine.connect() as conn:
+        try:
+            conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_token VARCHAR"))
+            conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_token_expires TIMESTAMP"))
+            conn.commit()
+            print("✅ Migration done")
+        except Exception as e:
+            print(f"Migration skipped: {e}")
