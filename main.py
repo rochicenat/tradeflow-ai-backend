@@ -504,3 +504,70 @@ async def delete_account(current_user: User = Depends(get_current_user), db: Ses
     db.delete(current_user)
     db.commit()
     return {"message": "Account deleted successfully"}
+
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+import secrets
+
+GMAIL_USER = os.getenv("GMAIL_USER")
+GMAIL_APP_PASSWORD = os.getenv("GMAIL_APP_PASSWORD")
+
+@app.post("/forgot-password")
+async def forgot_password(email: str = Form(...), db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.email == email).first()
+    if not user:
+        return {"message": "If this email exists, a reset link has been sent"}
+    
+    token = secrets.token_urlsafe(32)
+    user.reset_token = token
+    user.reset_token_expires = datetime.utcnow() + timedelta(hours=1)
+    db.commit()
+    
+    reset_link = f"https://www.tradeflowai.cloud/reset-password?token={token}"
+    
+    msg = MIMEMultipart()
+    msg['From'] = GMAIL_USER
+    msg['To'] = email
+    msg['Subject'] = "TradeFlow AI - Password Reset"
+    body = f"""
+    <html><body>
+    <h2>Password Reset Request</h2>
+    <p>Click the link below to reset your password. This link expires in 1 hour.</p>
+    <a href="{reset_link}" style="background:#f97316;color:white;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:bold;">Reset Password</a>
+    <p>If you didn't request this, ignore this email.</p>
+    </body></html>
+    """
+    msg.attach(MIMEText(body, 'html'))
+    
+    try:
+        server = smtplib.SMTP('smtp.gmail.com', 587)
+        server.starttls()
+        server.login(GMAIL_USER, GMAIL_APP_PASSWORD)
+        server.sendmail(GMAIL_USER, email, msg.as_string())
+        server.quit()
+    except Exception as e:
+        print(f"Email error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to send email")
+    
+    return {"message": "If this email exists, a reset link has been sent"}
+
+class ResetPasswordRequest(BaseModel):
+    token: str
+    new_password: str
+
+@app.post("/reset-password")
+async def reset_password(data: ResetPasswordRequest, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.reset_token == data.token).first()
+    if not user or not user.reset_token_expires or user.reset_token_expires < datetime.utcnow():
+        raise HTTPException(status_code=400, detail="Invalid or expired token")
+    
+    if len(data.new_password) < 6:
+        raise HTTPException(status_code=400, detail="Password must be at least 6 characters")
+    
+    user.hashed_password = get_password_hash(data.new_password)
+    user.reset_token = None
+    user.reset_token_expires = None
+    db.commit()
+    
+    return {"message": "Password reset successfully"}

@@ -25,6 +25,8 @@ class User(Base):
     plan_started_at = Column(DateTime, nullable=True)
     plan_ends_at = Column(DateTime, nullable=True)
     last_reset_at = Column(DateTime, nullable=True)
+    reset_token = Column(String, nullable=True)
+    reset_token_expires = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 class Analysis(Base):
     __tablename__ = "analyses"
