@@ -148,6 +148,7 @@ async def analyze_image(
     risk_percent: str = Form(default="2"),
     leverage: str = Form(default="1"),
     order_type: str = Form(default="market"),
+    language: str = Form(default="en"),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -186,6 +187,7 @@ Answer:"""
                 status_code=400,
                 detail="❌ This image does not appear to be a trading chart. Please upload a valid price chart, candlestick chart, or financial graph showing market data."
             )
+        lang_instruction = "Respond in Turkish language." if language == "tr" else ""
         trading_params = ""
         if account_size and analysis_type in ("scalp_premium", "swing_premium"):
             try:
@@ -243,6 +245,7 @@ Upper: [take profit price - realistic scalp target]
 * [trade management - when to move stop to breakeven]
 * [invalidation level - when to cancel the trade]
 {trading_params}
+{lang_instruction}
 Educational analysis only, not financial advice."""
             else:
                 analysis_prompt = f"""You are an expert swing trader. Analyze this trading chart for PREMIUM SWING TRADING analysis.
@@ -281,6 +284,7 @@ Upper: [take profit price - next major level]
 * [trade management - partial profits, trailing stop]
 * [invalidation level - when to cancel the trade]
 {trading_params}
+{lang_instruction}
 Educational analysis only, not financial advice."""
         elif analysis_type == "scalp":
             analysis_prompt = """You are an expert scalp trader. Analyze this trading chart for SCALP TRADING (1-15 minute timeframes).
@@ -315,9 +319,10 @@ Upper: [take profit price - realistic scalp target]
 * [risk/reward ratio - e.g. 1:2]
 * [recommended position size note - high/medium/low risk]
 
+{lang_instruction}
 Educational analysis only, not financial advice."""
         else:
-            analysis_prompt = """You are an expert swing trader. Analyze this trading chart for SWING TRADING (holding positions 2-10 days).
+            analysis_prompt = f"""You are an expert swing trader. Analyze this trading chart for SWING TRADING (holding positions 2-10 days).
 
 SWING TRADING RULES:
 - Trades last 2-10 days
@@ -349,6 +354,7 @@ Upper: [take profit price - next major level]
 * [risk/reward ratio - e.g. 1:3]
 * [market condition note - trending/ranging/choppy]
 
+{lang_instruction}
 Educational analysis only, not financial advice."""
         response = client.models.generate_content(
         model="gemini-2.5-flash",
