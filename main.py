@@ -547,7 +547,7 @@ async def forgot_password(email: str = Form(...), db: Session = Depends(get_db))
         server.sendmail(GMAIL_USER, email, msg.as_string())
         server.quit()
     except Exception as e:
-        print(f"Email error: {e}")
+        import traceback; traceback.print_exc(); print(f"Email error full: {repr(e)}")
         raise HTTPException(status_code=500, detail="Failed to send email")
     
     return {"message": "If this email exists, a reset link has been sent"}
