@@ -505,50 +505,37 @@ async def delete_account(current_user: User = Depends(get_current_user), db: Ses
     db.commit()
     return {"message": "Account deleted successfully"}
 
-import smtplib
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
 import secrets
-
-GMAIL_USER = os.getenv("GMAIL_USER")
-GMAIL_APP_PASSWORD = os.getenv("GMAIL_APP_PASSWORD")
+import httpx
+RESEND_API_KEY = os.getenv("RESEND_API_KEY")
 
 @app.post("/forgot-password")
 async def forgot_password(email: str = Form(...), db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == email).first()
     if not user:
         return {"message": "If this email exists, a reset link has been sent"}
-    
     token = secrets.token_urlsafe(32)
     user.reset_token = token
     user.reset_token_expires = datetime.utcnow() + timedelta(hours=1)
     db.commit()
-    
     reset_link = f"https://www.tradeflowai.cloud/reset-password?token={token}"
-    
-    msg = MIMEMultipart()
-    msg['From'] = GMAIL_USER
-    msg['To'] = email
-    msg['Subject'] = "TradeFlow AI - Password Reset"
-    body = f"""
-    <html><body>
-    <h2>Password Reset Request</h2>
-    <p>Click the link below to reset your password. This link expires in 1 hour.</p>
-    <a href="{reset_link}" style="background:#f97316;color:white;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:bold;">Reset Password</a>
-    <p>If you didn't request this, ignore this email.</p>
-    </body></html>
-    """
-    msg.attach(MIMEText(body, 'html'))
-    
+    body = f"""<html><body><h2>Password Reset</h2><p>Click below to reset your password. Expires in 1 hour.</p><a href="{reset_link}" style="background:#f97316;color:white;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:bold;">Reset Password</a><p>If you did not request this, ignore this email.</p></body></html>"""
     try:
-        server = smtplib.SMTP('smtp.gmail.com', 587)
-        server.starttls()
-        server.login(GMAIL_USER, GMAIL_APP_PASSWORD)
-        server.sendmail(GMAIL_USER, email, msg.as_string())
-        server.quit()
+        async with httpx.AsyncClient() as client:
+            res = await client.post(
+                "https://api.resend.com/emails",
+                headers={"Authorization": f"Bearer {RESEND_API_KEY}", "Content-Type": "application/json"},
+                json={"from": "TradeFlow AI <onboarding@resend.dev>", "to": [email], "subject": "TradeFlow AI - Password Reset", "html": body}
+            )
+            if res.status_code != 200:
+                print(f"Resend error: {res.text}")
+                raise HTTPException(status_code=500, detail="Failed to send email")
+    except HTTPException:
+        raise
     except Exception as e:
-        import traceback; traceback.print_exc(); print(f"Email error full: {repr(e)}")
+        print(f"Email error: {e}")
         raise HTTPException(status_code=500, detail="Failed to send email")
+    return {"message": "If this email exists, a reset link has been sent"}
     
     return {"message": "If this email exists, a reset link has been sent"}
 
