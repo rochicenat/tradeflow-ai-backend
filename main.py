@@ -182,7 +182,82 @@ Answer:"""
                 status_code=400,
                 detail="❌ This image does not appear to be a trading chart. Please upload a valid price chart, candlestick chart, or financial graph showing market data."
             )
-        if analysis_type == "scalp":
+        if analysis_type in ("scalp_premium", "swing_premium"):
+            if analysis_type == "scalp_premium":
+                analysis_prompt = """You are an expert scalp trader. Analyze this trading chart for PREMIUM SCALP TRADING analysis.
+Analyze the chart and respond in this EXACT format (no extra text):
+UPTREND or DOWNTREND or NEUTRAL
+low or medium or high
+Reference: [current price or entry zone]
+Lower: [stop loss price - tight, 3-10 pips away]
+Upper: [take profit price - realistic scalp target]
+**Key Levels:**
+* [immediate support level with price]
+* [immediate resistance level with price]
+* [any nearby liquidity zone]
+**Pattern Analysis:**
+* [candlestick pattern visible]
+* [momentum signal]
+* [microstructure - break of structure, liquidity grab]
+**Breakout & Retest:**
+* [any breakout level visible and direction]
+* [retest confirmation - yes/no and explanation]
+* [trend line break if visible]
+**Indicators:**
+* [RSI value estimate and signal - overbought/oversold/neutral]
+* [MA/EMA alignment - price above/below key MAs]
+* [Volume analysis - above/below average, climax volume]
+**Fibonacci:**
+* [key Fibonacci retracement level price if visible]
+* [Fibonacci extension target if applicable]
+**Risk Assessment:**
+* [win probability % for this scalp setup]
+* [risk/reward ratio]
+* [recommended position size note]
+**Psychology & Trade Plan:**
+* [market sentiment - fear/greed/neutral]
+* [recommended entry trigger - exact condition to enter]
+* [trade management - when to move stop to breakeven]
+* [invalidation level - when to cancel the trade]
+Educational analysis only, not financial advice."""
+            else:
+                analysis_prompt = """You are an expert swing trader. Analyze this trading chart for PREMIUM SWING TRADING analysis.
+Analyze the chart and respond in this EXACT format (no extra text):
+UPTREND or DOWNTREND or NEUTRAL
+low or medium or high
+Reference: [current price or entry zone]
+Lower: [stop loss price - below key support/resistance]
+Upper: [take profit price - next major level]
+**Key Levels:**
+* [major support zone with price]
+* [major resistance zone with price]
+* [weekly/daily key level if visible]
+**Pattern Analysis:**
+* [chart pattern - bull flag, head & shoulders, double bottom, triangle]
+* [trend indicator - MA alignment, trend line break]
+* [confluence factors - multiple timeframe alignment]
+**Breakout & Retest:**
+* [any breakout level visible and direction]
+* [retest confirmation - yes/no and explanation]
+* [trend line break if visible]
+**Indicators:**
+* [RSI value estimate and signal - overbought/oversold/neutral]
+* [MA/EMA alignment - price above/below 20/50/200 MA]
+* [Volume analysis - confirmation or divergence]
+**Fibonacci:**
+* [key Fibonacci retracement level price]
+* [Fibonacci extension target]
+**Risk Assessment:**
+* [win probability % for this swing setup]
+* [risk/reward ratio]
+* [market condition note - trending/ranging/choppy]
+**Psychology & Trade Plan:**
+* [market sentiment - fear/greed/neutral]
+* [recommended entry trigger - exact condition to enter]
+* [trade management - partial profits, trailing stop]
+* [invalidation level - when to cancel the trade]
+Educational analysis only, not financial advice."""
+        elif analysis_type == "scalp":
             analysis_prompt = """You are an expert scalp trader. Analyze this trading chart for SCALP TRADING (1-15 minute timeframes).
 
 SCALP TRADING RULES:
