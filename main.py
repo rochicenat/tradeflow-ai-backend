@@ -702,4 +702,5 @@ def verify_email(token: str, db: Session = Depends(get_db)):
     user.is_verified = True
     user.verification_token = None
     db.commit()
-    return RedirectResponse(url="https://www.tradeflowai.cloud/login?verified=true")
+    jwt_token = create_access_token({"sub": user.email})
+    return RedirectResponse(url=f"https://www.tradeflowai.cloud/auth/callback?token={jwt_token}")
