@@ -42,10 +42,7 @@ app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-    "https://www.tradeflowai.cloud",
-    "https://tradeflowai.cloud"
-],
+    allow_origins=["https://www.tradeflowai.cloud"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -79,16 +76,10 @@ def check_and_reset_monthly(user, db):
         user.last_reset_at = now
         db.commit()
 
-from fastapi import Cookie
-
-def get_current_user(
-    access_token: str = Cookie(None),
-    db: Session = Depends(get_db)
-):
-    if not access_token:
-        raise HTTPException(status_code=401, detail="Not authenticated")
+def get_current_user(authorization: str = Header(...), db: Session = Depends(get_db)):
     try:
-        payload = jwt.decode(access_token, SECRET_KEY, algorithms=[ALGORITHM])
+        token = authorization.replace("Bearer ", "")
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         email = payload.get("sub")
         if not email:
             raise HTTPException(status_code=401, detail="Invalid token")
@@ -126,8 +117,6 @@ async def register(name: str = Form(...), email: str = Form(...), password: str 
         print(f"Verification email error: {e}")
     return {"message": "Registration successful. Please check your email to verify your account."}
 
-from fastapi.responses import JSONResponse
-
 @app.post("/login")
 def login(username: str = Form(...), password: str = Form(...), db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == username).first()
@@ -136,17 +125,7 @@ def login(username: str = Form(...), password: str = Form(...), db: Session = De
     if not user.is_verified:
         raise HTTPException(status_code=403, detail="Please verify your email before logging in")
     token = create_access_token({"sub": user.email})
-    response = JSONResponse(content={"message": "Login successful"})
-    response.set_cookie(
-        key="access_token",
-        value=token,
-        httponly=True,
-        secure=True,
-        samesite="none",
-        max_age=60 * 60 * 24 * 30
-    )
-    return response
-
+    return {"access_token": token, "token_type": "bearer"}
 
 @app.get("/me")
 def get_me(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
@@ -724,12 +703,3 @@ def verify_email(token: str, db: Session = Depends(get_db)):
     user.verification_token = None
     db.commit()
     return RedirectResponse(url="https://www.tradeflowai.cloud/login?verified=true")
-
-
-from fastapi.responses import JSONResponse
-
-@app.post("/logout")
-def logout():
-    response = JSONResponse(content={"message": "Logged out"})
-    response.delete_cookie("access_token")
-    return response
