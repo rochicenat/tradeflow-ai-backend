@@ -33,8 +33,8 @@ VARIANT_PLAN_MAP = {
 
 PLAN_LIMITS = {
     "free": 3,
-    "pro": 999999,
-    "premium": 999999
+    "pro": 100000,
+    "premium": 100000
 }
 
 client = genai.Client(api_key=GOOGLE_API_KEY)
