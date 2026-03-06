@@ -33,7 +33,7 @@ VARIANT_PLAN_MAP = {
 
 PLAN_LIMITS = {
     "free": 3,
-    "pro": 50,
+    "pro": 999999,
     "premium": 999999
 }
 
@@ -704,3 +704,69 @@ def verify_email(token: str, db: Session = Depends(get_db)):
     db.commit()
     jwt_token = create_access_token({"sub": user.email})
     return RedirectResponse(url=f"https://www.tradeflowai.cloud/auth/callback?token={jwt_token}")
+
+
+# ============================================
+# TRADING BOT ENTEGRASYONİ
+# ============================================
+from bot_service import (
+    get_bot_health, create_bot, stop_bot, get_bot_summary,
+    list_bots, get_positions, get_btc_price, get_eth_price,
+    get_strategies, trigger_kill_switch, get_kill_switch_status,
+)
+import uuid as uuid_lib
+
+class CreateBotModel(BaseModel):
+    symbol: str = "BTCUSDT"
+    strategy: str = "ema_crossover"
+    mode: str = "paper"
+    initial_balance: float = 10000.0
+
+@app.get("/api/bot/health")
+async def bot_health():
+    return await get_bot_health()
+
+@app.get("/api/bot/prices")
+async def bot_prices():
+    btc = await get_btc_price()
+    eth = await get_eth_price()
+    return {"BTC": btc.get("price"), "ETH": eth.get("price")}
+
+@app.get("/api/bot/strategies")
+async def bot_strategies():
+    return await get_strategies()
+
+@app.post("/api/bot/create")
+async def bot_create(req: CreateBotModel):
+    bot_id = f"bot-{str(uuid_lib.uuid4())[:8]}"
+    return await create_bot(bot_id, "user-default", req.symbol, req.strategy, req.mode, req.initial_balance)
+
+@app.get("/api/bot/list")
+async def bot_list():
+    return await list_bots()
+
+@app.get("/api/bot/positions")
+async def bot_positions(user_id: str = "user-123"):
+    return await get_positions(user_id)
+
+@app.get("/api/bot/summary/{bot_id}")
+async def bot_summary(bot_id: str):
+    return await get_bot_summary(bot_id)
+
+@app.delete("/api/bot/{bot_id}/stop")
+async def bot_stop(bot_id: str):
+    return await stop_bot(bot_id)
+
+@app.post("/api/bot/kill-switch")
+async def bot_kill_switch(user_id: str = None):
+    return await trigger_kill_switch(user_id)
+
+@app.get("/api/bot/kill-switch/status")
+async def bot_kill_status():
+    return await get_kill_switch_status()
+
+@app.post("/api/webhooks/bot-events")
+async def bot_webhook(request: Request):
+    body = await request.json()
+    print(f"[BOT EVENT] {body.get('event_type')}: {body}")
+    return {"received": True}
