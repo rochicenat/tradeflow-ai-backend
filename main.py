@@ -28,7 +28,7 @@ LEMONSQUEEZY_WEBHOOK_SECRET = os.getenv("LEMONSQUEEZY_WEBHOOK_SECRET")
 
 VARIANT_PLAN_MAP = {
     "47621ebf-7c5e-4b6e-bbc9-d6bee626b2d4": "pro",
-    "2ebc9f3f-ed0e-4e0e-8138-eab308fded60": "pro",
+    "60423ba8-053a-4d04-a924-69b6aaae30e3": "pro",
 }
 
 PLAN_LIMITS = {
