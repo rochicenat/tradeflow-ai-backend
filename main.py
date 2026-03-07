@@ -153,6 +153,7 @@ async def analyze_image(
     session: str = Form(default=""),
     asset_type: str = Form(default=""),
     rr_ratio: str = Form(default="1:2"),
+    timeframe: str = Form(default=""),
     language: str = Form(default="en"),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
@@ -218,6 +219,8 @@ Answer:"""
                 params_parts.append(f"- Asset Type: {asset_type.capitalize()}")
             if rr_ratio:
                 params_parts.append(f"- Desired R:R Ratio: {rr_ratio}")
+            if timeframe:
+                params_parts.append(f"- Chart Timeframe: {timeframe}")
             if params_parts:
                 trading_params = "\nTRADER PARAMETERS (tailor your analysis to these):\n" + "\n".join(params_parts) + "\nUse these parameters to personalize entry, exit, position sizing and risk management."
         except:
