@@ -443,24 +443,7 @@ Educational analysis only, not financial advice."""
                 try: tp_price = float(''.join(filter(lambda x: x.isdigit() or x == '.', l.split(':')[1].split()[0])))
                 except: pass
 
-        # Auto-save signal for bot
-        if trend in ['bullish', 'bearish'] and entry_price > 0:
-            import uuid, time
-            signal_data = {
-                "signal_id": str(uuid.uuid4())[:8],
-                "action": "BUY" if trend == "bullish" else "SELL",
-                "symbol": asset_type.upper() if asset_type else "XAUUSD",
-                "entry": entry_price,
-                "sl": sl_price,
-                "tp": tp_price,
-                "lot": 0.01,
-                "timestamp": time.time(),
-                "analysis_type": analysis_type
-            }
-            if current_user.email not in bot_signals:
-                bot_signals[current_user.email] = []
-            bot_signals[current_user.email].append(signal_data)
-            bot_signals[current_user.email] = bot_signals[current_user.email][-10:]
+        # Auto-signal disabled - user manually sends to bot
 
         record = Analysis(
             user_email=current_user.email,
