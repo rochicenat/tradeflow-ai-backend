@@ -148,6 +148,11 @@ async def analyze_image(
     risk_percent: str = Form(default="2"),
     leverage: str = Form(default="1"),
     order_type: str = Form(default="market"),
+    sl_type: str = Form(default="fixed"),
+    indicators: str = Form(default=""),
+    session: str = Form(default=""),
+    asset_type: str = Form(default=""),
+    rr_ratio: str = Form(default="1:2"),
     language: str = Form(default="en"),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
@@ -189,24 +194,34 @@ Answer:"""
             )
         lang_instruction = "Respond in Turkish language." if language == "tr" else ""
         trading_params = ""
-        if account_size and analysis_type in ("scalp_premium", "swing_premium"):
-            try:
+        try:
+            params_parts = []
+            if account_size:
                 acc = float(account_size)
                 risk = float(risk_percent) / 100
                 lev = float(leverage)
                 risk_amount = acc * risk
                 position_size = risk_amount * lev
-                trading_params = f"""
-TRADER PARAMETERS (use these for precise calculations):
-- Account Size: ${acc:,.0f}
-- Risk Per Trade: {risk_percent}% = ${risk_amount:,.0f}
-- Leverage: {lev}x
-- Order Type: {order_type}
-- Max Position Size: ${position_size:,.0f}
-Use these to calculate exact lot sizes, position sizes, and adjust TP/SL accordingly.
-RSI is critically important - always mention exact RSI value and signal."""
-            except:
-                pass
+                params_parts.append(f"- Account Size: ${acc:,.0f}")
+                params_parts.append(f"- Risk Per Trade: {risk_percent}% = ${risk_amount:,.0f}")
+                params_parts.append(f"- Leverage: {lev}x")
+                params_parts.append(f"- Max Position Size: ${position_size:,.0f}")
+            if order_type:
+                params_parts.append(f"- Order Type: {order_type.capitalize()}")
+            if sl_type:
+                params_parts.append(f"- Stop-Loss Type: {'ATR-based (dynamic)' if sl_type == 'atr' else 'Fixed (pips)'}")
+            if indicators:
+                params_parts.append(f"- Preferred Indicators: {indicators}")
+            if session:
+                params_parts.append(f"- Trading Session: {session.upper()}")
+            if asset_type:
+                params_parts.append(f"- Asset Type: {asset_type.capitalize()}")
+            if rr_ratio:
+                params_parts.append(f"- Desired R:R Ratio: {rr_ratio}")
+            if params_parts:
+                trading_params = "\nTRADER PARAMETERS (tailor your analysis to these):\n" + "\n".join(params_parts) + "\nUse these parameters to personalize entry, exit, position sizing and risk management."
+        except:
+            pass
         if analysis_type in ("scalp_premium", "swing_premium"):
             if analysis_type == "scalp_premium":
                 analysis_prompt = f"""You are an expert scalp trader. Analyze this trading chart for PREMIUM SCALP TRADING analysis.
