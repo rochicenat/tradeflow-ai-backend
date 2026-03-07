@@ -832,3 +832,50 @@ async def bot_webhook(request: Request):
     body = await request.json()
     print(f"[BOT EVENT] {body.get('event_type')}: {body}")
     return {"received": True}
+
+# ============ BOT SIGNAL ENDPOINTS ============
+from pydantic import BaseModel as PydanticBase
+
+class BotSignal(PydanticBase):
+    action: str  # BUY, SELL, CLOSE
+    symbol: str
+    entry: float
+    sl: float
+    tp: float
+    lot: float = 0.01
+
+bot_signals = {}  # email -> list of signals
+
+@app.post("/bot/signal/{email}")
+async def receive_bot_signal(email: str, signal: BotSignal):
+    import uuid, time
+    signal_data = {
+        "signal_id": str(uuid.uuid4())[:8],
+        "action": signal.action,
+        "symbol": signal.symbol,
+        "entry": signal.entry,
+        "sl": signal.sl,
+        "tp": signal.tp,
+        "lot": signal.lot,
+        "timestamp": time.time()
+    }
+    if email not in bot_signals:
+        bot_signals[email] = []
+    bot_signals[email].append(signal_data)
+    # Keep last 10 signals only
+    bot_signals[email] = bot_signals[email][-10:]
+    return {"status": "ok", "signal_id": signal_data["signal_id"]}
+
+@app.get("/bot/signal/{email}")
+async def get_bot_signal(email: str, last_id: str = ""):
+    signals = bot_signals.get(email, [])
+    if not signals:
+        return Response(status_code=204)
+    latest = signals[-1]
+    if latest["signal_id"] == last_id:
+        return Response(status_code=204)
+    return latest
+
+@app.get("/bot/signals/{email}")
+async def get_all_signals(email: str, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    return bot_signals.get(email, [])
