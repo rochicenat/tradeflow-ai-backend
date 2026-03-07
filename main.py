@@ -406,21 +406,15 @@ async def lemonsqueezy_webhook(request: Request, db: Session = Depends(get_db)):
     attrs = data.get("data", {}).get("attributes", {})
     
     user_email = attrs.get("user_email") or data.get("meta", {}).get("custom_data", {}).get("email")
-    user_id = data.get("meta", {}).get("custom_data", {}).get("user_id")
     subscription_id = str(data.get("data", {}).get("id", ""))
     variant_id = str(attrs.get("variant_id", ""))
     status = attrs.get("status", "")
-    print(f"Webhook: {event_name} | email: {user_email} | user_id: {user_id} | variant: {variant_id} | status: {status}")
-    user = None
-    if user_id:
-        try:
-            user = db.query(User).filter(User.id == int(user_id)).first()
-        except:
-            pass
-    if not user and user_email:
-        user = db.query(User).filter(User.email == user_email).first()
-    if not user:
-        return {"status": "ignored", "reason": "user not found"}
+
+    print(f"Webhook: {event_name} | email: {user_email} | variant: {variant_id} | status: {status}")
+
+    if not user_email:
+        return {"status": "ignored", "reason": "no email"}
+
     user = db.query(User).filter(User.email == user_email).first()
     if not user:
         return {"status": "ignored", "reason": "user not found"}
