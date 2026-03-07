@@ -427,6 +427,41 @@ Educational analysis only, not financial advice."""
         confidence_line = lines[1].strip().lower() if len(lines) > 1 else "medium"
         trend_map = {"UPTREND": "bullish", "DOWNTREND": "bearish", "NEUTRAL": "sideways"}
         trend = trend_map.get(trend_line, "sideways")
+        # Parse entry, SL, TP from analysis
+        entry_price = 0.0
+        sl_price = 0.0
+        tp_price = 0.0
+        for line in lines:
+            l = line.strip()
+            if l.startswith('Reference:') or l.startswith('Entry:'):
+                try: entry_price = float(''.join(filter(lambda x: x.isdigit() or x == '.', l.split(':')[1].split()[0])))
+                except: pass
+            elif l.startswith('Lower:') or l.startswith('SL:'):
+                try: sl_price = float(''.join(filter(lambda x: x.isdigit() or x == '.', l.split(':')[1].split()[0])))
+                except: pass
+            elif l.startswith('Upper:') or l.startswith('TP:'):
+                try: tp_price = float(''.join(filter(lambda x: x.isdigit() or x == '.', l.split(':')[1].split()[0])))
+                except: pass
+
+        # Auto-save signal for bot
+        if trend in ['bullish', 'bearish'] and entry_price > 0:
+            import uuid, time
+            signal_data = {
+                "signal_id": str(uuid.uuid4())[:8],
+                "action": "BUY" if trend == "bullish" else "SELL",
+                "symbol": asset_type.upper() if asset_type else "XAUUSD",
+                "entry": entry_price,
+                "sl": sl_price,
+                "tp": tp_price,
+                "lot": 0.01,
+                "timestamp": time.time(),
+                "analysis_type": analysis_type
+            }
+            if current_user.email not in bot_signals:
+                bot_signals[current_user.email] = []
+            bot_signals[current_user.email].append(signal_data)
+            bot_signals[current_user.email] = bot_signals[current_user.email][-10:]
+
         record = Analysis(
             user_email=current_user.email,
             trend=trend,
