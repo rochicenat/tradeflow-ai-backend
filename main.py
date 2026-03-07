@@ -333,7 +333,13 @@ Upper: [take profit price - realistic scalp target]
 * [win probability % for this scalp setup]
 * [risk/reward ratio - e.g. 1:2]
 * [recommended position size note - high/medium/low risk]
-
+**Smart Money Concepts:**
+* [Order Blocks: nearest bullish/bearish OB with price level]
+* [Fair Value Gap (FVG): any unfilled FVG visible and direction]
+* [Liquidity Sweep: recent high/low swept - yes/no]
+* [BOS or CHoCH visible - direction]
+* [Partial TP1 at 1:1, TP2 at full target, move SL to breakeven after TP1]
+{trading_params}
 {lang_instruction}
 Educational analysis only, not financial advice."""
         else:
@@ -368,7 +374,13 @@ Upper: [take profit price - next major level]
 * [win probability % for this swing setup]
 * [risk/reward ratio - e.g. 1:3]
 * [market condition note - trending/ranging/choppy]
-
+**Smart Money Concepts:**
+* [Order Blocks: nearest bullish/bearish OB with price level]
+* [Fair Value Gap (FVG): any unfilled FVG visible and direction]
+* [Liquidity Sweep: recent high/low swept - yes/no]
+* [Golden Pocket (0.618-0.65 Fib): price near this zone?]
+* [Partial TP1 at 1:1, TP2 at full R:R, trail stop after TP1, invalidation level]
+{trading_params}
 {lang_instruction}
 Educational analysis only, not financial advice."""
         response = client.models.generate_content(
