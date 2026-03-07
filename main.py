@@ -914,3 +914,24 @@ async def get_bot_signal(email: str, last_id: str = ""):
 @app.get("/bot/signals/{email}")
 async def get_all_signals(email: str, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     return bot_signals.get(email, [])
+
+# ============ BOT SETTINGS ============
+bot_settings = {}  # email -> settings
+
+@app.post("/bot/settings")
+async def save_bot_settings(
+    symbol: str = Form(default="XAUUSD"),
+    lot_size: str = Form(default="0.01"),
+    risk_percent: str = Form(default="1"),
+    current_user: User = Depends(get_current_user)
+):
+    bot_settings[current_user.email] = {
+        "symbol": symbol,
+        "lot_size": lot_size,
+        "risk_percent": risk_percent
+    }
+    return {"status": "ok"}
+
+@app.get("/bot/settings")
+async def get_bot_settings(current_user: User = Depends(get_current_user)):
+    return bot_settings.get(current_user.email, {"symbol": "XAUUSD", "lot_size": "0.01", "risk_percent": "1"})
