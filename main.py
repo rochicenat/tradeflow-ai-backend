@@ -506,6 +506,7 @@ def upgrade_plan(email: str = Form(...), plan: str = Form(...), db: Session = De
         raise HTTPException(status_code=404, detail="User not found")
     user.plan = plan
     user.analyses_limit = PLAN_LIMITS.get(plan, 3)
+    user.subscription_status = "active" if plan != "free" else "inactive"
     db.commit()
     return {"message": f"Plan updated to {plan}"}
 
