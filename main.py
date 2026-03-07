@@ -333,6 +333,21 @@ Upper: [take profit price - realistic scalp target]
 * [win probability % for this scalp setup]
 * [risk/reward ratio - e.g. 1:2]
 * [recommended position size note - high/medium/low risk]
+**Breakout & Retest:**
+* [any breakout level visible and direction]
+* [retest confirmation - yes/no]
+* [trend line break if visible]
+**Indicators:**
+* [RSI value and signal - overbought/oversold/neutral]
+* [MA/EMA alignment - price above/below key MAs]
+* [Volume - above/below average]
+**Fibonacci:**
+* [key Fibonacci retracement level if visible]
+* [Fibonacci extension target]
+**Psychology & Trade Plan:**
+* [market sentiment - fear/greed/neutral]
+* [entry trigger - exact condition]
+* [invalidation level]
 **Smart Money Concepts:**
 * [Order Blocks: nearest bullish/bearish OB with price level]
 * [Fair Value Gap (FVG): any unfilled FVG visible and direction]
@@ -374,6 +389,22 @@ Upper: [take profit price - next major level]
 * [win probability % for this swing setup]
 * [risk/reward ratio - e.g. 1:3]
 * [market condition note - trending/ranging/choppy]
+**Breakout & Retest:**
+* [any breakout level visible and direction]
+* [retest confirmation - yes/no]
+* [trend line break if visible]
+**Indicators:**
+* [RSI value and signal - overbought/oversold/neutral]
+* [MA/EMA alignment - price above/below 20/50/200 MA]
+* [Volume - confirmation or divergence]
+**Fibonacci:**
+* [key Fibonacci retracement level]
+* [Fibonacci extension target]
+**Psychology & Trade Plan:**
+* [market sentiment - fear/greed/neutral]
+* [entry trigger - exact condition]
+* [trade management - partial profits, trailing stop]
+* [invalidation level]
 **Smart Money Concepts:**
 * [Order Blocks: nearest bullish/bearish OB with price level]
 * [Fair Value Gap (FVG): any unfilled FVG visible and direction]
