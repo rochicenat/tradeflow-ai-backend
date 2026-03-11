@@ -38,6 +38,17 @@ class Analysis(Base):
     confidence = Column(String)
     analysis_text = Column(Text)
     created_at = Column(DateTime, default=datetime.utcnow)
+
+class BotSettings(Base):
+    __tablename__ = "bot_settings"
+    id = Column(Integer, primary_key=True, index=True)
+    user_email = Column(String, ForeignKey("users.email"), unique=True, index=True)
+    symbol = Column(String, default="XAUUSD")
+    lot_size = Column(String, default="0.01")
+    risk_percent = Column(String, default="1")
+    account_balance = Column(String, default="10000")
+    updated_at = Column(DateTime, default=datetime.utcnow)
+
 def get_db():
     db = SessionLocal()
     try:

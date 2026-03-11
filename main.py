@@ -1,7 +1,7 @@
 from fastapi import FastAPI, UploadFile, File, HTTPException, Depends, Header, Form, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
-from database import User, Analysis, SessionLocal, engine, Base
+from database import User, Analysis, BotSettings, SessionLocal, engine, Base
 from passlib.context import CryptContext
 from jose import JWTError, jwt
 from datetime import datetime, timedelta
@@ -899,7 +899,6 @@ async def get_all_signals(email: str, current_user: User = Depends(get_current_u
     return bot_signals.get(email, [])
 
 # ============ BOT SETTINGS ============
-bot_settings = {}  # email -> settings
 
 @app.post("/bot/settings")
 async def save_bot_settings(
@@ -907,16 +906,25 @@ async def save_bot_settings(
     lot_size: str = Form(default="0.01"),
     risk_percent: str = Form(default="1"),
     account_balance: str = Form(default="10000"),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
 ):
-    bot_settings[current_user.email] = {
-        "symbol": symbol,
-        "lot_size": lot_size,
-        "risk_percent": risk_percent,
-        "account_balance": account_balance
-    }
+    settings = db.query(BotSettings).filter(BotSettings.user_email == current_user.email).first()
+    if settings:
+        settings.symbol = symbol
+        settings.lot_size = lot_size
+        settings.risk_percent = risk_percent
+        settings.account_balance = account_balance
+        settings.updated_at = datetime.utcnow()
+    else:
+        settings = BotSettings(user_email=current_user.email, symbol=symbol, lot_size=lot_size, risk_percent=risk_percent, account_balance=account_balance)
+        db.add(settings)
+    db.commit()
     return {"status": "ok"}
 
 @app.get("/bot/settings")
-async def get_bot_settings(current_user: User = Depends(get_current_user)):
-    return bot_settings.get(current_user.email, {"symbol": "XAUUSD", "lot_size": "0.01", "risk_percent": "1", "account_balance": "10000"})
+async def get_bot_settings(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    settings = db.query(BotSettings).filter(BotSettings.user_email == current_user.email).first()
+    if settings:
+        return {"symbol": settings.symbol, "lot_size": settings.lot_size, "risk_percent": settings.risk_percent, "account_balance": settings.account_balance}
+    return {"symbol": "XAUUSD", "lot_size": "0.01", "risk_percent": "1", "account_balance": "10000"}
