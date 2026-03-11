@@ -149,6 +149,7 @@ async def analyze_image(
     leverage: str = Form(default="1"),
     order_type: str = Form(default="market"),
     sl_type: str = Form(default="fixed"),
+    sl_pips: str = Form(default="20"),
     indicators: str = Form(default=""),
     session: str = Form(default=""),
     asset_type: str = Form(default=""),
@@ -210,7 +211,9 @@ Answer:"""
             if order_type:
                 params_parts.append(f"- Order Type: {order_type.capitalize()}")
             if sl_type:
-                params_parts.append(f"- Stop-Loss Type: {'ATR-based (dynamic)' if sl_type == 'atr' else 'Fixed (pips)'}")
+                params_parts.append(f"- Stop-Loss Type: {'ATR-based (dynamic)' if sl_type == 'atr' else 'Fixed (pips)'}") 
+            if sl_pips:
+                params_parts.append(f"- Minimum Stop-Loss Distance: {sl_pips} pips (STRICT RULE: SL must be at least {sl_pips} pips away from entry, no exceptions)")
             if indicators:
                 params_parts.append(f"- Preferred Indicators: {indicators}")
             if session:
