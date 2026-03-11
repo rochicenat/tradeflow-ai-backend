@@ -906,15 +906,17 @@ async def save_bot_settings(
     symbol: str = Form(default="XAUUSD"),
     lot_size: str = Form(default="0.01"),
     risk_percent: str = Form(default="1"),
+    account_balance: str = Form(default="10000"),
     current_user: User = Depends(get_current_user)
 ):
     bot_settings[current_user.email] = {
         "symbol": symbol,
         "lot_size": lot_size,
-        "risk_percent": risk_percent
+        "risk_percent": risk_percent,
+        "account_balance": account_balance
     }
     return {"status": "ok"}
 
 @app.get("/bot/settings")
 async def get_bot_settings(current_user: User = Depends(get_current_user)):
-    return bot_settings.get(current_user.email, {"symbol": "XAUUSD", "lot_size": "0.01", "risk_percent": "1"})
+    return bot_settings.get(current_user.email, {"symbol": "XAUUSD", "lot_size": "0.01", "risk_percent": "1", "account_balance": "10000"})
