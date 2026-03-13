@@ -221,7 +221,7 @@ Answer:"""
             if asset_type:
                 params_parts.append(f"- Asset Type: {asset_type.capitalize()}")
             if rr_ratio:
-                params_parts.append(f"- Desired R:R Ratio: {rr_ratio}")
+                params_parts.append(f"- Desired R:R Ratio: {rr_ratio} (STRICT: Take Profit MUST be exactly {rr_ratio} times the Stop Loss distance from entry. Non-negotiable.)")
             if timeframe:
                 params_parts.append(f"- Chart Timeframe: {timeframe}")
             if params_parts:
