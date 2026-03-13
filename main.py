@@ -267,6 +267,12 @@ Upper: [take profit price - realistic scalp target]
 * [invalidation level - when to cancel the trade]
 {trading_params}
 {lang_instruction}
+CRITICAL RULES FOR STOP LOSS:
+- FOREX pairs (EURUSD, GBPUSD, etc): SL must be at least 20 pips away from entry
+- XAUUSD (Gold): SL must be at least 50 pips (0.50$) away from entry  
+- NASDAQ/Indices: SL must be at least 30 points away from entry
+- NEVER place SL within 5 pips of entry
+- SL must be at a logical support/resistance level, not arbitrary
 Educational analysis only, not financial advice."""
             else:
                 analysis_prompt = f"""You are an expert swing trader. Analyze this trading chart for PREMIUM SWING TRADING analysis.
@@ -306,6 +312,12 @@ Upper: [take profit price - next major level]
 * [invalidation level - when to cancel the trade]
 {trading_params}
 {lang_instruction}
+CRITICAL RULES FOR STOP LOSS:
+- FOREX pairs (EURUSD, GBPUSD, etc): SL must be at least 20 pips away from entry
+- XAUUSD (Gold): SL must be at least 50 pips (0.50$) away from entry  
+- NASDAQ/Indices: SL must be at least 30 points away from entry
+- NEVER place SL within 5 pips of entry
+- SL must be at a logical support/resistance level, not arbitrary
 Educational analysis only, not financial advice."""
         elif analysis_type == "scalp":
             analysis_prompt = """You are an expert scalp trader. Analyze this trading chart for SCALP TRADING (1-15 minute timeframes).
@@ -362,6 +374,12 @@ Upper: [take profit price - realistic scalp target]
 * [Partial TP1 at 1:1, TP2 at full target, move SL to breakeven after TP1]
 {trading_params}
 {lang_instruction}
+CRITICAL RULES FOR STOP LOSS:
+- FOREX pairs (EURUSD, GBPUSD, etc): SL must be at least 20 pips away from entry
+- XAUUSD (Gold): SL must be at least 50 pips (0.50$) away from entry  
+- NASDAQ/Indices: SL must be at least 30 points away from entry
+- NEVER place SL within 5 pips of entry
+- SL must be at a logical support/resistance level, not arbitrary
 Educational analysis only, not financial advice."""
         else:
             analysis_prompt = f"""You are an expert swing trader. Analyze this trading chart for SWING TRADING (holding positions 2-10 days).
@@ -419,6 +437,12 @@ Upper: [take profit price - next major level]
 * [Partial TP1 at 1:1, TP2 at full R:R, trail stop after TP1, invalidation level]
 {trading_params}
 {lang_instruction}
+CRITICAL RULES FOR STOP LOSS:
+- FOREX pairs (EURUSD, GBPUSD, etc): SL must be at least 20 pips away from entry
+- XAUUSD (Gold): SL must be at least 50 pips (0.50$) away from entry  
+- NASDAQ/Indices: SL must be at least 30 points away from entry
+- NEVER place SL within 5 pips of entry
+- SL must be at a logical support/resistance level, not arbitrary
 Educational analysis only, not financial advice."""
         response = client.models.generate_content(
         model="gemini-2.5-flash",
