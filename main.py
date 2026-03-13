@@ -235,7 +235,7 @@ Analyze the chart and respond in this EXACT format (no extra text):
 UPTREND or DOWNTREND or NEUTRAL
 low or medium or high
 Reference: [current price or entry zone]
-Lower: [stop loss price - tight, 3-10 pips away]
+Lower: [stop loss price - minimum 15 pips away for forex, 200 pips for gold]
 Upper: [take profit price - realistic scalp target]
 **Key Levels:**
 * [immediate support level with price]
@@ -280,7 +280,7 @@ Analyze the chart and respond in this EXACT format (no extra text):
 UPTREND or DOWNTREND or NEUTRAL
 low or medium or high
 Reference: [current price or entry zone]
-Lower: [stop loss price - below key support/resistance]
+Lower: [stop loss price - minimum 20 pips away for forex, 200 pips for gold, at key support/resistance]
 Upper: [take profit price - next major level]
 **Key Levels:**
 * [major support zone with price]
@@ -325,7 +325,7 @@ Educational analysis only, not financial advice."""
 SCALP TRADING RULES:
 - Trades last 1-30 minutes maximum
 - Target: 5-20 pips / 0.1-0.5% price move
-- Stop loss: very tight, 3-10 pips
+- Stop loss: minimum 15 pips for forex, minimum 200 pips for XAUUSD
 - High win rate required (60%+)
 - Entry must be precise, momentum-based
 
@@ -334,7 +334,7 @@ Analyze the chart and respond in this EXACT format (no extra text):
 UPTREND or DOWNTREND or NEUTRAL
 low or medium or high
 Reference: [current price or entry zone]
-Lower: [stop loss price - tight, 3-10 pips away]
+Lower: [stop loss price - minimum 15 pips away for forex, 200 pips for gold]
 Upper: [take profit price - realistic scalp target]
 
 **Key Levels:**
@@ -396,7 +396,7 @@ Analyze the chart and respond in this EXACT format (no extra text):
 UPTREND or DOWNTREND or NEUTRAL
 low or medium or high
 Reference: [current price or entry zone]
-Lower: [stop loss price - below key support/resistance]
+Lower: [stop loss price - minimum 20 pips away for forex, 200 pips for gold, at key support/resistance]
 Upper: [take profit price - next major level]
 
 **Key Levels:**
