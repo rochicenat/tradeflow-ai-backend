@@ -470,6 +470,25 @@ Educational analysis only, not financial advice."""
                 try: tp_price = float(''.join(filter(lambda x: x.isdigit() or x == '.', l.split(':')[1].split()[0])))
                 except: pass
 
+        # Auto-fix SL if too close to entry
+        if entry_price and sl_price:
+            min_distances = {
+                "xauusd": 2.0, "gold": 2.0,
+                "eurusd": 0.0020, "gbpusd": 0.0020, "gbpjpy": 0.20,
+                "usdjpy": 0.20, "nasdaq": 50.0, "btcusd": 500.0,
+            }
+            # Detect symbol from analysis text
+            detected_min = 0.0020  # default forex
+            for sym, dist in min_distances.items():
+                if sym in analysis_text.lower():
+                    detected_min = dist
+                    break
+            if abs(entry_price - sl_price) < detected_min:
+                if sl_price < entry_price:  # BUY - SL below entry
+                    sl_price = round(entry_price - detected_min, 5)
+                else:  # SELL - SL above entry
+                    sl_price = round(entry_price + detected_min, 5)
+                print(f"SL auto-fixed: {sl_price}")
         # Auto-signal disabled - user manually sends to bot
 
         record = Analysis(
