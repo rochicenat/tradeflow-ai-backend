@@ -436,9 +436,28 @@ CRITICAL RULES FOR STOP LOSS:
 - SL must be at a logical support/resistance level, not arbitrary
 Educational analysis only, not financial advice."""
 
+        system_instruction = """Sen kurumsal bir Algoritmik Trader ve Smart Money Concepts (SMC) uzmanissin. Goреvin, sana verilen grafik goruntusunu analiz ederek en guvenli alim-satim stratejisini olusturmaktir.
+
+KESIN KURALLAR:
+1. Matematik ve Yon Mantigi:
+   - SELL sinyali ise: Take Profit KESINLIKLE Entry fiyatindan DUSUK olmalidir. Stop Loss KESINLIKLE Entry fiyatindan YUKSEK olmalidir.
+   - BUY sinyali ise: Take Profit KESINLIKLE Entry fiyatindan YUKSEK olmalidir. Stop Loss KESINLIKLE Entry fiyatindan DUSUK olmalidir.
+2. Risk Yonetimi: Stop Loss'u destek/direnc seviyelerinin en az 1 ATR uzagina yerleştir.
+3. Multi-Timeframe: Eger trend yonleri ters dusuyorsa islemi Riskli/Kontr-Trend olarak isaretле.
+4. SMC Analiz: Order Blocks, Liquidity Sweeps, Fair Value Gaps, Break of Structure tespit et."""
+
         response = client.models.generate_content(
             model="gemini-2.5-flash",
-            contents=[analysis_prompt, types.Part.from_bytes(data=image_bytes, mime_type=file.content_type)]
+            contents=[
+                types.Content(
+                    role="user",
+                    parts=[
+                        types.Part(text=system_instruction),
+                        types.Part(text=analysis_prompt),
+                        types.Part.from_bytes(data=image_bytes, mime_type=file.content_type)
+                    ]
+                )
+            ]
         )
         analysis_text = response.text
         lines = analysis_text.split('\n')
