@@ -155,6 +155,7 @@ async def analyze_image(
     indicators: str = Form(default=""),
     session: str = Form(default=""),
     asset_type: str = Form(default=""),
+    symbol: str = Form(default=""),
     rr_ratio: str = Form(default="1:2"),
     timeframe: str = Form(default=""),
     language: str = Form(default="en"),
