@@ -156,11 +156,6 @@ def get_market_data(symbol: str, timeframe: str = "1h", asset_type: str = "") ->
     if not symbol:
         return {}
     try:
-        detected = detect_asset_type(symbol) if not asset_type else asset_type.lower()
-        if detected == "crypto" and CCXT_AVAILABLE:
-            data = get_crypto_data(symbol, timeframe)
-            if data:
-                return data
         return get_yfinance_data(symbol, timeframe)
     except Exception as e:
         print(f"Market data error: {e}")
