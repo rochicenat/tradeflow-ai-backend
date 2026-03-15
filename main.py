@@ -461,10 +461,8 @@ KESIN KURALLAR:
                     role="user",
                     parts=[
                         types.Part(text=system_instruction),
-                        types.Part(text=analysis_prompt + ("
+                        types.Part(text=analysis_prompt + ("\n\nREAL MARKET DATA:\n" + json.dumps(market_data, ensure_ascii=False, indent=2) if market_data else "")),
 
-REAL MARKET DATA:
-" + json.dumps(market_data, ensure_ascii=False, indent=2) if market_data else "")),
                         types.Part.from_bytes(data=image_bytes, mime_type=file.content_type)
                     ]
                 )
