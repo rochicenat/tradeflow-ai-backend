@@ -18,6 +18,7 @@ import secrets
 import xml.etree.ElementTree as ET
 from pydantic import BaseModel
 from dotenv import load_dotenv
+from market_data import get_market_data
 load_dotenv()
 
 Base.metadata.create_all(bind=engine)
@@ -436,6 +437,13 @@ CRITICAL RULES FOR STOP LOSS:
 - SL must be at a logical support/resistance level, not arbitrary
 Educational analysis only, not financial advice."""
 
+        # Fetch real market data
+        market_data = get_market_data(
+            symbol=symbol if symbol else (asset_type or ""),
+            timeframe=timeframe if timeframe else "1h",
+            asset_type=asset_type or ""
+        )
+
         system_instruction = """Sen kurumsal bir Algoritmik Trader ve Smart Money Concepts (SMC) uzmanissin. Goреvin, sana verilen grafik goruntusunu analiz ederek en guvenli alim-satim stratejisini olusturmaktir.
 
 KESIN KURALLAR:
@@ -453,7 +461,10 @@ KESIN KURALLAR:
                     role="user",
                     parts=[
                         types.Part(text=system_instruction),
-                        types.Part(text=analysis_prompt),
+                        types.Part(text=analysis_prompt + ("
+
+REAL MARKET DATA:
+" + json.dumps(market_data, ensure_ascii=False, indent=2) if market_data else "")),
                         types.Part.from_bytes(data=image_bytes, mime_type=file.content_type)
                     ]
                 )

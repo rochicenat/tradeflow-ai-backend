@@ -11,3 +11,9 @@ google-genai
 python-dotenv
 httpx
 authlib
+
+ccxt
+yfinance
+pandas-ta
+pandas
+numpy
