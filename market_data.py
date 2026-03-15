@@ -53,6 +53,10 @@ def get_yfinance_data(symbol: str, timeframe: str = "1h") -> dict:
         
         yf_symbol = symbol.upper()
         symbol_map = {
+            "BTCUSDT":"BTC-USD","ETHUSDT":"ETH-USD","SOLUSDT":"SOL-USD",
+            "BNBUSDT":"BNB-USD","XRPUSDT":"XRP-USD","DOGEUSDT":"DOGE-USD",
+            "ADAUSDT":"ADA-USD","DOTUSDT":"DOT-USD","MATICUSDT":"MATIC-USD",
+            "PEPEUSDT":"PEPE-USD","SHIBUSDT":"SHIB-USD","AVAXUSDT":"AVAX-USD",
             "XAUUSD":"GC=F","GOLD":"GC=F","XAGUSD":"SI=F",
             "EURUSD":"EURUSD=X","GBPUSD":"GBPUSD=X","USDJPY":"USDJPY=X",
             "AUDUSD":"AUDUSD=X","USDCAD":"USDCAD=X","USDCHF":"USDCHF=X",
