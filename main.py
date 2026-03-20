@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from database import User, Analysis, SessionLocal, engine, Base
 from passlib.context import CryptContext
 from jose import JWTError, jwt
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timedelta
 from google import genai
 from google.genai import types
 from PIL import Image
@@ -523,12 +523,19 @@ async def lemonsqueezy_webhook(request: Request, db: Session = Depends(get_db)):
         return {"status": "ignored", "reason": "user not found"}
     if event_name in ("subscription_created", "subscription_updated"):
         plan = VARIANT_PLAN_MAP.get(variant_id, "pro")
-        if status == "active":
+        if status in ("active", "on_trial"):
             user.plan = plan
             user.subscription_status = "active"
             user.subscription_id = subscription_id
             user.plan_started_at = datetime.utcnow()
             user.analyses_limit = PLAN_LIMITS.get(plan, 50)
+            
+            if status == "on_trial":
+                trial_ends = attrs.get("trial_ends_at")
+                if trial_ends:
+                    user.trial_ends_at = datetime.fromisoformat(trial_ends.replace("Z", "+00:00"))
+                else:
+                    user.trial_ends_at = datetime.utcnow() + timedelta(days=7)
             db.commit()
     elif event_name in ("subscription_cancelled", "subscription_expired", "subscription_paused"):
         user.plan = "free"
