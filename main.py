@@ -187,10 +187,19 @@ NO if the image is:
 - Text documents
 - Non-financial content
 Answer:"""
-        validation_response = client.models.generate_content(
-            model="gemini-2.5-flash",
-            contents=[validation_prompt, types.Part.from_bytes(data=image_bytes, mime_type=file.content_type)]
-        )
+        validation_response = None
+        for vmodel in ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"]:
+            try:
+                validation_response = client.models.generate_content(
+                    model=vmodel,
+                    contents=[validation_prompt, types.Part.from_bytes(data=image_bytes, mime_type=file.content_type)]
+                )
+                break
+            except:
+                import time
+                time.sleep(3)
+        if not validation_response:
+            raise HTTPException(status_code=503, detail="AI service temporarily unavailable. Please try again in a moment.")
         validation_text = validation_response.text.strip().upper()
         if "NO" in validation_text or "NOT" in validation_text:
             raise HTTPException(
