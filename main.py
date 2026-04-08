@@ -483,8 +483,6 @@ KESIN KURALLAR:
                 break
         if not response:
             raise last_error
-            ]
-        )
         analysis_text = response.text
         lines = analysis_text.split('\n')
         trend_line = lines[0].strip().upper() if len(lines) > 0 else "NEUTRAL"
