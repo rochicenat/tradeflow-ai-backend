@@ -455,18 +455,34 @@ KESIN KURALLAR:
 3. Multi-Timeframe: Eger trend yonleri ters dusuyorsa islemi Riskli/Kontr-Trend olarak isaretле.
 4. SMC Analiz: Order Blocks, Liquidity Sweeps, Fair Value Gaps, Break of Structure tespit et."""
 
-        response = client.models.generate_content(
-            model="gemini-2.5-flash",
-            contents=[
-                types.Content(
-                    role="user",
-                    parts=[
-                        types.Part(text=system_instruction),
-                        types.Part(text=analysis_prompt + ("\n\nREAL MARKET DATA:\n" + json.dumps(market_data, ensure_ascii=False, indent=2) if market_data else "")),
-
-                        types.Part.from_bytes(data=image_bytes, mime_type=file.content_type)
-                    ]
-                )
+        models_to_try = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"]
+        response = None
+        last_error = None
+        for model_name in models_to_try:
+            for attempt in range(3):
+                try:
+                    response = client.models.generate_content(
+                        model=model_name,
+                        contents=[
+                            types.Content(
+                                role="user",
+                                parts=[
+                                    types.Part(text=system_instruction),
+                                    types.Part(text=analysis_prompt + ("\n\nREAL MARKET DATA:\n" + json.dumps(market_data, ensure_ascii=False, indent=2) if market_data else "")),
+                                    types.Part.from_bytes(data=image_bytes, mime_type=file.content_type)
+                                ]
+                            )
+                        ]
+                    )
+                    break
+                except Exception as e:
+                    last_error = e
+                    import time
+                    time.sleep(2)
+            if response:
+                break
+        if not response:
+            raise last_error
             ]
         )
         analysis_text = response.text
