@@ -188,7 +188,7 @@ NO if the image is:
 - Non-financial content
 Answer:"""
         validation_response = None
-        for vmodel in ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"]:
+        for vmodel in ["gemini-2.5-flash", "gemini-2.0-flash-exp", "gemini-1.5-flash-latest"]:
             try:
                 validation_response = client.models.generate_content(
                     model=vmodel,
@@ -464,7 +464,7 @@ KESIN KURALLAR:
 3. Multi-Timeframe: Eger trend yonleri ters dusuyorsa islemi Riskli/Kontr-Trend olarak isaretле.
 4. SMC Analiz: Order Blocks, Liquidity Sweeps, Fair Value Gaps, Break of Structure tespit et."""
 
-        models_to_try = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"]
+        models_to_try = ["gemini-2.5-flash", "gemini-2.0-flash-exp", "gemini-1.5-flash-latest"]
         response = None
         last_error = None
         for model_name in models_to_try:
